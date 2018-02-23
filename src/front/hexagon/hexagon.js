@@ -27,5 +27,6 @@ export default class Hexagon {
 
   draw(drawer) {
     drawer.drawHexagon(this.pos.x, this.pos.y, this.size.x, this.color)
+    drawer.drawText(this.pos.x, this.pos.y, this.coord.x + "," + this.coord.y)
   }
 }
