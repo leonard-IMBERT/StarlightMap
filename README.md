@@ -1,6 +1,6 @@
 # StarlightMap
 
-Starlight map is a webpage which have for objective to serve an interactive map of the isl of starlight from the LoneStarNorth's game forum
+StarlightMap is a webpage which provides an interactive map of the Isle of Starlight forum game by LoneStarNorth, accessible at http://willsaveworldforgold.com/forum/viewforum.php?f=11 .
 
 A big thanks to him and to the community for what they are doing on this forum.
 
@@ -10,7 +10,7 @@ This software depends on
  - Nightmare JS
  - xfvb for server deployement
 
-If you want to run it please verify that your server has this different intems
+If you want to run it please verify that your server has these installed.
 
 ## Roadmap
  - V1
@@ -33,7 +33,7 @@ If you want to run it please verify that your server has this different intems
   - [ ] Document the code
 
 ## Contributing
-To contribute, fork the repo improved the programs then make a pull request
+To contribute, fork the repo, improve the code, then make a pull request
 
 ## License
 You are free to use, copy, modify in a free usage my code at the only condition you credits me.
