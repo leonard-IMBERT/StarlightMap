@@ -8,8 +8,7 @@ mongoose.connect('mongodb://localhost/Starlight');
 
 const nightmare = Nightmare({
   gotoTimeout: 120000, // in ms
-  executionTimeout: 120000, // in ms
-  show: true
+  executionTimeout: 120000 // in ms
 })
 
 class Position {
@@ -79,9 +78,7 @@ function parser(data) {
   const Inhabitants = new Array();
   const persoMatch = data.split(/\n ?\n/)
   for(let inhabitant of persoMatch) {
-    console.log(inhabitant)
     const details = inhabitant.match(IndividualRegex)
-    console.log(details)
 
     /*
      * 1: Name
