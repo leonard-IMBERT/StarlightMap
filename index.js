@@ -46,5 +46,6 @@ app.get('/info', (req, res) => {
 })
 
 
+const port = process.env.STARLIGHT_PORT || 3000
 
-app.listen(3000, _ => console.log("Server listening on 3000"));
+app.listen(port, _ => console.log(`Server listening on ${port}`));
