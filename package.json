@@ -20,5 +20,9 @@
   "devDependencies": {
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/leonard-IMBERT/StarlightMap.git"
   }
 }
