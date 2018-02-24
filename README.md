@@ -8,9 +8,24 @@ A big thanks to him and to the community for what they are doing on this forum.
 This software depends on
  - MongoDB
  - Nightmare JS
- - xfvb for server deployement
+ - xfvb (optional, for server deployment)
 
-If you want to run it please verify that your server has these installed.
+If you want to run it, please verify that your server has these installed. Node.js dependencies can be installed by running:
+
+npm install
+
+## Testing
+To set up StarlightMap, ensure that MongoDB is running on default settings (accessible at localhost:27017). If xfvb is available, StarlightMap can be started by running:
+
+npm start
+
+Alternatively, it is possible to test StarlightMap on a local machine without xfvb by running:
+
+node_modules/.bin/webpack && node index.js
+
+Either way, the server will listen on port 3000, and thus the page can be viewed at localhost:3000. In order to retrieve or update data (including the map image), send a POST request to localhost:3000/refresh; this can be accomplished via:
+
+curl -X POST localhost:3000/refresh
 
 ## Roadmap
  - V1
@@ -22,7 +37,7 @@ If you want to run it please verify that your server has these installed.
    - [ ] Have a list
    - [ ] Make it interactive
  - V2
-  - [ ] Display craft an magic parts
+  - [ ] Display craft and magic parts
    - [ ] Craft part
    - [ ] Magic part
   - [ ] Make the map recognize the different tiles
