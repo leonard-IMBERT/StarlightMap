@@ -114,6 +114,7 @@ function parser(data) {
 }
 
 function refresh() {
+  console.info("Update started")
   return nightmare
     .goto('http://willsaveworldforgold.com/forum/viewtopic.php?f=11&t=243')
     .wait(5000)
@@ -168,7 +169,7 @@ function refresh() {
         Elves: result.Status.Elves,
         Craft: result.Crafting,
         Magic: result.Magic
-      })).save().then(_ => console.log("Updated"));
+      })).save().then(_ => console.info("Updated"));
     }).end()
 }
 
