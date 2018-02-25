@@ -72,13 +72,21 @@ const StatusMongoose = mongoose.model('Status', {
 
 
 function parser(data) {
-  const IndividualRegex = /(\w*) *\n([a-zA-Z0-9 ]*) *\n.*: *(\d+),(\d+) *\n.*: *(\d+)\/(\d+) *\n.*: *((?:\w*[, ]?)*) *\n.*: *((?:\w*[, ]?)*)/
-  const PersoRegex = /((?:.+[\s\S])*)(?:\n ?\n|\n ?$])|$/
+  const ConditionsRegex = /Conditions: *((?:\w*[, ]?)*)/
+  const ItemsRegex = /Items: *((?:\w*[, ]?)*)/
+  const PosRegex = /Position: *(\d+), *(\d+)/
+  const HealthRegex = /Health: *(\d+)\/(\d+)/
 
   const Inhabitants = new Array();
   const persoMatch = data.split(/\n ?\n/)
+
   for(let inhabitant of persoMatch) {
-    const details = inhabitant.match(IndividualRegex)
+    const details = inhabitant.split(/\n/)
+
+    const position = details[2].match(PosRegex)
+    const health = details[3].match(HealthRegex)
+    const items = details[4].match(ItemsRegex)
+    const conditions = details[5].match(ConditionsRegex)
 
     /*
      * 1: Name
@@ -92,14 +100,14 @@ function parser(data) {
      */
 
     Inhabitants.push(new Inhabitant(
+      details[0],
       details[1],
-      details[2],
-      details[3],
-      details[4],
-      details[5],
-      details[6],
-      details[7].split(', '),
-      details[8].split(', ')
+      position[1],
+      position[2],
+      health[1],
+      health[2],
+      items[1].split(/, */),
+      conditions[1].split(/, */)
     ))
   }
   return Inhabitants
