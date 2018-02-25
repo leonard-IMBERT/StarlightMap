@@ -143,11 +143,9 @@ function refresh() {
       const MagicPost = Posts[2];
       StatusPost.Magic = Array.from(MagicPost.getElementsByClassName("content")[0].childNodes).find(elem => elem.nodeType === Node.TEXT_NODE).data
 
-      alert('done');
       return JSON.stringify(StatusPost)
     }).run((error, result) => {
       if(error) console.error(error)
-      console.log(result)
       result = JSON.parse(result);
       for(race in result.Status) {
         result.Status[race] = parser(result.Status[race])
