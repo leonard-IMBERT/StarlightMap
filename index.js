@@ -3,8 +3,8 @@ const Crawler = require('./src/back/Crawler')
 const app = express();
 const path = require('path');
 
-//refresh()
-//
+const day = 24 * 3600 * 1000; //in ms
+
 app.engine('html', require('ejs').renderFile);
 app.set('views', path.join(__dirname, 'src/front/html'));
 
@@ -45,7 +45,11 @@ app.get('/info', (req, res) => {
   })
 })
 
-
 const port = process.env.STARLIGHT_PORT || 3000
 
-app.listen(port, _ => console.log(`Server listening on ${port}`));
+app.listen(port, _ => {
+  console.log(`Server listening on ${port}`)
+
+  Crawler.refresh()
+  setInterval(Crawler.refresh, day);
+});
