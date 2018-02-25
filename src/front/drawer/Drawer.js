@@ -32,6 +32,19 @@ export default class Drawer{
   }
 
   /**
+   * Draw a text in a colored box
+   * the posX and posY are the position of the text
+   * fontSize is in px
+   */
+  drawTextBoxed(posX, posY, text, textColor, boxColor, fontSize=12, fontStyle="monospace") {
+    const measure = this.ctx.measureText(text)
+    this.ctx.fillStyle = boxColor
+    this.ctx.fillRect(posX - 2, posY - 2 - fontSize, measure.width + 4, fontSize + 4)
+    this.ctx.font = `${fontSize}px ${fontStyle}`
+    this.drawText(posX, posY, text, textColor)
+  }
+
+  /**
    * Used to draw a text (pretty obvious)
    **/
   drawText(posX, posY, text, color) {
