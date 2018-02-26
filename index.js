@@ -57,6 +57,6 @@ const port = process.env.STARLIGHT_PORT || 3000
 app.listen(port, _ => {
   console.log(`Server listening on ${port}`)
 
-  //Crawler.refresh()
+  Crawler.refresh()
   setInterval(Crawler.refresh, day);
 });
