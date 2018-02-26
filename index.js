@@ -45,6 +45,14 @@ app.get('/info', (req, res) => {
   })
 })
 
+app.get('/stats', (req, res) => {
+  Crawler.getCounts().then(d => res.send(d), {
+    headers: {
+      "Content-Type": "application/json"
+    }
+  })
+})
+
 const port = process.env.STARLIGHT_PORT || 3000
 
 app.listen(port, _ => {

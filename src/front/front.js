@@ -11,6 +11,8 @@ const map = new Images()
 const data = document.querySelector("div#data")
 const dataBlueprint = document.querySelector("div.data")
 
+const stats = document.querySelector("div#stats")
+
 const MetadataRequest = new Request('/metadata', {
   method: 'GET',
   headers: (new Headers()).append('Accept','application/json')
@@ -19,6 +21,11 @@ const MetadataRequest = new Request('/metadata', {
 const InfoRequest = (hexa) => new Request(`/info?col=${hexa.coord.x}&row=${hexa.coord.y}`, {
   method: 'GET',
   headers: (new Headers()).append('Accept', 'application/json')
+})
+
+const StatsRequest = new Request('/stats', {
+  method: 'GET',
+  headers: (new Headers()).append('Accept','application/json')
 })
 
 function translateCoordinate (x, y) {
@@ -103,3 +110,28 @@ map.load('/map', 962, 924, 0, 0).then(_ => {
     })
   })
 }, e => console.error(e));
+
+fetch(StatsRequest).then(d => d.json()).then(d => {
+  let table = document.createElement("table")
+  table.className = "resourceCounts"
+  let caption = document.createElement("caption")
+  caption.innerText = "Totals Among All Survivors"
+
+  table.appendChild(caption)
+
+  for (const resource in d) {
+    let rescount = document.createElement("tr")
+    rescount.className = "resourceCounts"
+    let name = document.createElement("td")
+    name.className = "resourceCounts"
+    let count = document.createElement("td")
+    count.className = "resourceCounts"
+
+    name.innerText = `${resource}:`
+    count.innerText = `${d[resource]}`
+    rescount.appendChild(name)
+    rescount.appendChild(count)
+    table.appendChild(rescount)
+  }
+  stats.appendChild(table)
+})

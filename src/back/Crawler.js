@@ -62,10 +62,7 @@ const InhabitantSchema = new Schema({
 })
 const StatusMongoose = mongoose.model('Status', {
   date: Date,
-  Humans: [InhabitantSchema],
-  Halflings: [InhabitantSchema],
-  Dwarves: [InhabitantSchema],
-  Elves: [InhabitantSchema],
+  Survivors: [InhabitantSchema],
   Craft: String,
   Magic: String
 })
@@ -163,10 +160,10 @@ function refresh() {
 
       (new StatusMongoose({
         date: new Date(),
-        Humans: result.Status.Humans,
-        Halflings: result.Status.Halflings,
-        Dwarves: result.Status.Dwarves,
-        Elves: result.Status.Elves,
+        Survivors: [...result.Status.Humans,
+                    ...result.Status.Halflings,
+                    ...result.Status.Dwarves,
+                    ...result.Status.Elves],
         Craft: result.Crafting,
         Magic: result.Magic
       })).save().then(_ => console.info("Updated"));
@@ -175,7 +172,7 @@ function refresh() {
 
 function getInfoByCoord(x, y) {
   return new Promise((resolve, reject) => {
-    StatusMongoose.find({}, ['Humans', 'Halflings', 'Elves', 'Dwarves'], {
+    StatusMongoose.find({}, ['Survivors'], {
       skip:0,
       limit: 1,
       sort: {
@@ -183,8 +180,7 @@ function getInfoByCoord(x, y) {
       },
     }, (err, stat) => {
       if(err) { reject(err) }
-      stat = stat[0]
-      const inhab = [...stat.Humans, ...stat.Halflings, ...stat.Elves, ...stat.Dwarves]
+      const inhab = stat[0].Survivors
         .filter(i => i !== null && i !== undefined)
         .filter(i => i.Position.x == x && i.Position.y == y)
       resolve(inhab)
@@ -192,7 +188,33 @@ function getInfoByCoord(x, y) {
   })
 }
 
+function getCounts() {
+  return new Promise((resolve, reject) => {
+    StatusMongoose.find({}, ['Survivors.items', 'Survivors.condition'], {
+      skip:0,
+      limit: 1,
+      sort: {
+        date: -1
+      },
+    }).exec( (err, stat) => {
+      if(err) { reject(err) }
+      const count = stat[0].Survivors
+        .reduce((acc, cur) => {
+          const counting = cur.items.concat(cur.condition)
+          for (const item of counting) {
+            if (!item) continue
+            if (item in acc) acc[item]++
+            else acc[item] = 0
+          }
+          return acc
+        }, {})
+      resolve(count)
+    })
+  })
+}
+
 module.exports = {
+  getCounts,
   getInfoByCoord,
   Position,
   Inhabitant,
