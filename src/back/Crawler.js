@@ -188,9 +188,9 @@ function getInfoByCoord(x, y) {
   })
 }
 
-function getItemCounts() {
+function getCounts() {
   return new Promise((resolve, reject) => {
-    StatusMongoose.find({}, ['Survivors.items'], {
+    StatusMongoose.find({}, ['Survivors.items', 'Survivors.condition'], {
       skip:0,
       limit: 1,
       sort: {
@@ -198,22 +198,23 @@ function getItemCounts() {
       },
     }).exec( (err, stat) => {
       if(err) { reject(err) }
-      const itemcount = stat[0].Survivors
+      const count = stat[0].Survivors
         .reduce((acc, cur) => {
-          for (const item of cur.items) {
+          const counting = cur.items.concat(cur.condition)
+          for (const item of counting) {
             if (!item) continue
             if (item in acc) acc[item]++
             else acc[item] = 0
           }
           return acc
         }, {})
-      resolve(itemcount)
+      resolve(count)
     })
   })
 }
 
 module.exports = {
-  getItemCounts,
+  getCounts,
   getInfoByCoord,
   Position,
   Inhabitant,

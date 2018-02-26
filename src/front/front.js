@@ -115,7 +115,7 @@ fetch(StatsRequest).then(d => d.json()).then(d => {
   let table = document.createElement("table")
   table.className = "resourceCounts"
   let caption = document.createElement("caption")
-  caption.innerText = "Total Resources Among All Survivors"
+  caption.innerText = "Totals Among All Survivors"
 
   table.appendChild(caption)
 

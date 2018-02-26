@@ -46,7 +46,7 @@ app.get('/info', (req, res) => {
 })
 
 app.get('/stats', (req, res) => {
-  Crawler.getItemCounts().then(d => res.send(d), {
+  Crawler.getCounts().then(d => res.send(d), {
     headers: {
       "Content-Type": "application/json"
     }
