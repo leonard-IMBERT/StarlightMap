@@ -38,19 +38,13 @@ app.post('/refresh', (req, res) => {
 });
 
 app.get('/info', (req, res) => {
-  Crawler.getInfoByCoord(req.query.col, req.query.row).then(d => res.send(d), {
-    headers: {
-      "Content-Type": "application/json"
-    }
-  })
+  res.append('Content-Type', 'application/json')
+  Crawler.getInfoByCoord(req.query.col, req.query.row).then(d => res.send(d))
 })
 
 app.get('/stats', (req, res) => {
-  Crawler.getCounts().then(d => res.send(d), {
-    headers: {
-      "Content-Type": "application/json"
-    }
-  })
+  res.append('Content-Type', 'application/json')
+  Crawler.getCounts().then(d => res.send(d))
 })
 
 const port = process.env.STARLIGHT_PORT || 3000
