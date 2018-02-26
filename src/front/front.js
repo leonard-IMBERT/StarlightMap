@@ -47,6 +47,7 @@ function templatingData(inhabitants) {
 
 const HexagonColor = "#000000"
 
+
 map.load('/map', 962, 924, 0, 0).then(_ => {
 
   console.log("Map loaded");
