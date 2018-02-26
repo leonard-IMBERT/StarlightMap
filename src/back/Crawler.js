@@ -80,10 +80,17 @@ function parser(data) {
   for(let inhabitant of persoMatch) {
     const details = inhabitant.split(/\n/)
 
-    const position = details[2].match(PosRegex)
-    const health = details[3].match(HealthRegex)
-    const items = details[4].match(ItemsRegex)
-    const conditions = details[5].match(ConditionsRegex)
+    //TODO: clean temporary fix
+    if(
+      details[1].match(PosRegex) ||
+      details[1].match(HealthRegex) ||
+      details[1].match(ItemsRegex) ||
+      details[1].match(ConditionsRegex)) details[1] = ""
+
+    const position = inhabitant.match(PosRegex)
+    const health = inhabitant.match(HealthRegex)
+    const items = inhabitant.match(ItemsRegex)
+    const conditions = inhabitant.match(ConditionsRegex)
 
     /*
      * 1: Name
