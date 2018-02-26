@@ -32,6 +32,11 @@ app.get('/metadata', (req, res) => {
   });
 });
 
+app.get('/details', (req, res) => {
+  res.append('Content-Type', 'application/json')
+  Crawler.getDetailsAboutStat(req.query.stat).then(d => res.send(d))
+})
+
 app.post('/refresh', (req, res) => {
   Crawler.refresh()
   res.send("Refresh lanched")
@@ -52,6 +57,6 @@ const port = process.env.STARLIGHT_PORT || 3000
 app.listen(port, _ => {
   console.log(`Server listening on ${port}`)
 
-  Crawler.refresh()
+  //Crawler.refresh()
   setInterval(Crawler.refresh, day);
 });
