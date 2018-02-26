@@ -188,7 +188,32 @@ function getInfoByCoord(x, y) {
   })
 }
 
+function getItemCounts() {
+  return new Promise((resolve, reject) => {
+    StatusMongoose.find({}, ['Survivors.items'], {
+      skip:0,
+      limit: 1,
+      sort: {
+        date: -1
+      },
+    }).exec( (err, stat) => {
+      if(err) { reject(err) }
+      const itemcount = stat[0].Survivors
+        .reduce((acc, cur) => {
+          for (const item of cur.items) {
+            if (!item) continue
+            if (item in acc) acc[item]++
+            else acc[item] = 0
+          }
+          return acc
+        }, {})
+      resolve(itemcount)
+    })
+  })
+}
+
 module.exports = {
+  getItemCounts,
   getInfoByCoord,
   Position,
   Inhabitant,

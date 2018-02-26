@@ -27,6 +27,16 @@ body, html {
   display:flex;
   justify-content: space-evenly;
 }
+
+#stats {
+  margin-left: 30px;
+  margin-right: 30px;
+  color: white;
+  display: flex;
+  justify-content: space-evenly;
+  font-family: monospace;
+}
+
 ul {
   color:inherit;
   list-style: none;
