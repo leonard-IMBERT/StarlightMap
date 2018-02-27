@@ -13,6 +13,10 @@ const dataBlueprint = document.querySelector("div.data")
 
 const stats = document.querySelector("div#stats")
 
+const table = document.querySelector('table#resources')
+
+const tableDetails = document.querySelector('table#resourceDetails')
+
 const MetadataRequest = new Request('/metadata', {
   method: 'GET',
   headers: (new Headers()).append('Accept','application/json')
@@ -26,6 +30,10 @@ const InfoRequest = (hexa) => new Request(`/info?col=${hexa.coord.x}&row=${hexa.
 const StatsRequest = new Request('/stats', {
   method: 'GET',
   headers: (new Headers()).append('Accept','application/json')
+})
+const DetailsRequest = (stat) => new Request(`/details?stat=${stat}`, {
+  method: 'GET',
+  headers: (new Headers()).append('Accept', 'application/json')
 })
 
 function translateCoordinate (x, y) {
@@ -112,26 +120,39 @@ map.load('/map', 962, 924, 0, 0).then(_ => {
 }, e => console.error(e));
 
 fetch(StatsRequest).then(d => d.json()).then(d => {
-  let table = document.createElement("table")
-  table.className = "resourceCounts"
-  let caption = document.createElement("caption")
-  caption.innerText = "Totals Among All Survivors"
-
-  table.appendChild(caption)
 
   for (const resource in d) {
-    let rescount = document.createElement("tr")
+    const rescount = table.insertRow()
     rescount.className = "resourceCounts"
-    let name = document.createElement("td")
+    const name = rescount.insertCell()
     name.className = "resourceCounts"
-    let count = document.createElement("td")
+    name.appendChild(document.createTextNode(`${resource}`))
+
+    const count = rescount.insertCell()
+    count.appendChild(document.createTextNode(`${d[resource]}`))
     count.className = "resourceCounts"
 
-    name.innerText = `${resource}:`
-    count.innerText = `${d[resource]}`
-    rescount.appendChild(name)
-    rescount.appendChild(count)
-    table.appendChild(rescount)
+    rescount.addEventListener('click', e => {
+      fetch(DetailsRequest(resource)).then(f => f.json()).then(details => {
+        details.sort((a, b) => {
+          if(a[1] === b[1]) return 0
+          else if(a[1] > b[1]) return 1
+          else return -1
+        }).reverse()
+
+        while(tableDetails.rows.length != 0) {
+          tableDetails.deleteRow(0)
+        }
+
+        for(const detail of details) {
+          const row = tableDetails.insertRow()
+          const surName = row.insertCell()
+          surName.appendChild(document.createTextNode(`${detail[0]}`))
+
+          const surCount = row.insertCell()
+          surCount.appendChild(document.createTextNode(`${detail[1]}`))
+        }
+      })
+    })
   }
-  stats.appendChild(table)
 })

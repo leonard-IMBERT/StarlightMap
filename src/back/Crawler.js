@@ -220,7 +220,34 @@ function getCounts() {
   })
 }
 
+function getDetailsAboutStat(stat) {
+  return new Promise((resolve, reject) => {
+    StatusMongoose.find({}, ['Survivors'], {
+      skip: 0,
+      limit: 1,
+      sort: {
+        date: -1
+      }
+    }).exec((err, d) => {
+      if(err) { reject(err) }
+      const details = []
+      const survivors = d[0].Survivors;
+      for(const survivor of survivors) {
+        if(survivor.items.find(e => e === stat)
+          || survivor.condition.find(e => e === stat)) {
+          const count = [...survivor.items, ...survivor.condition]
+            .filter(elem => elem === stat)
+            .length
+          details.push([survivor.Name, count])
+        }
+      }
+      resolve(details)
+    })
+  })
+}
+
 module.exports = {
+  getDetailsAboutStat,
   getCounts,
   getInfoByCoord,
   Position,

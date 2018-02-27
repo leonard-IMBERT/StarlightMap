@@ -42,3 +42,24 @@ ul {
   list-style: none;
   font-family: monospace;
 }
+
+#resources {
+  width: 40%;
+  border-spacing: 0px;
+}
+
+.resourceDetails {
+  width: 40%;
+}
+
+#resourceDetails {
+  width: 100%;
+}
+
+.resourceCounts:hover {
+  background-color: #444444;
+}
+
+caption {
+  padding: 5px;
+}
