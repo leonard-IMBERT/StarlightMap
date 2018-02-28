@@ -238,7 +238,10 @@ function getDetailsAboutStat(stat) {
           const count = [...survivor.items, ...survivor.condition]
             .filter(elem => elem === stat)
             .length
-          details.push([survivor.Name, count])
+          details.push([survivor.Name,
+                        survivor.Position.x,
+                        survivor.Position.y,
+                        count])
         }
       }
       resolve(details)

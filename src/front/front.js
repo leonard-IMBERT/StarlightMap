@@ -22,7 +22,7 @@ const MetadataRequest = new Request('/metadata', {
   headers: (new Headers()).append('Accept','application/json')
 })
 
-const InfoRequest = (hexa) => new Request(`/info?col=${hexa.coord.x}&row=${hexa.coord.y}`, {
+const InfoRequest = (x,y) => new Request(`/info?col=${x}&row=${y}`, {
   method: 'GET',
   headers: (new Headers()).append('Accept', 'application/json')
 })
@@ -51,6 +51,28 @@ function templatingData(inhabitants) {
   const span = document.createElement('span', {
 
   });
+}
+
+function getSurvivors(x,y) {
+  fetch(InfoRequest(x,y))
+    .then(d => d.json())
+    .then(d => {
+      while(data.firstChild) {
+        data.removeChild(data.firstChild);
+      }
+      for(const inhab of d) {
+        console.log(inhab)
+        new Card(dataBlueprint)
+          .fill({
+            Name: inhab.Name,
+            Description: inhab.Description,
+            Postion: `${inhab.Position.x},${inhab.Position.y}`,
+            Health: `${inhab.Health}/${inhab.MaxHealth}`,
+            Items: inhab.items.toString(),
+            Conditions: inhab.condition.toString()
+          }).appendIn(data)
+      }
+    })
 }
 
 const HexagonColor = "#000000"
@@ -92,28 +114,9 @@ map.load('/map', 962, 924, 0, 0).then(_ => {
     })
 
     canvas.addEventListener('click', e => {
-      const { x, y } = translateCoordinate(e.offsetX, e.offsetY)
       let hexa = hexagons.find(h => h.active)
       if(hexa) {
-        fetch(InfoRequest(hexa))
-          .then(d => d.json())
-          .then(d => {
-            while(data.firstChild) {
-              data.removeChild(data.firstChild);
-            }
-            for(const inhab of d) {
-              console.log(inhab)
-              new Card(dataBlueprint)
-                .fill({
-                  Name: inhab.Name,
-                  Description: inhab.Description,
-                  Postion: `${inhab.Position.x},${inhab.Position.y}`,
-                  Health: `${inhab.Health}/${inhab.MaxHealth}`,
-                  Items: inhab.items.toString(),
-                  Conditions: inhab.condition.toString()
-                }).appendIn(data)
-            }
-          })
+        getSurvivors(hexa.coord.x, hexa.coord.y)
       }
     })
   })
@@ -135,8 +138,8 @@ fetch(StatsRequest).then(d => d.json()).then(d => {
     rescount.addEventListener('click', e => {
       fetch(DetailsRequest(resource)).then(f => f.json()).then(details => {
         details.sort((a, b) => {
-          if(a[1] === b[1]) return 0
-          else if(a[1] > b[1]) return 1
+          if(a[3] === b[3]) return 0
+          else if(a[3] > b[3]) return 1
           else return -1
         }).reverse()
 
@@ -149,8 +152,15 @@ fetch(StatsRequest).then(d => d.json()).then(d => {
           const surName = row.insertCell()
           surName.appendChild(document.createTextNode(`${detail[0]}`))
 
+          const surPos = row.insertCell()
+          surPos.appendChild(document.createTextNode(
+                              `(${detail[1]},${detail[2]})`))
+          surPos.addEventListener('click',
+                                  e => getSurvivors(detail[1],detail[2]))
+          surPos.className = "location"
+
           const surCount = row.insertCell()
-          surCount.appendChild(document.createTextNode(`${detail[1]}`))
+          surCount.appendChild(document.createTextNode(`${detail[3]}`))
         }
       })
     })
