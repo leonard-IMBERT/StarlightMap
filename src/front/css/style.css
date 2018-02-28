@@ -60,6 +60,10 @@ ul {
   background-color: #444444;
 }
 
+.location:hover {
+  background-color: #444444;
+}
+
 caption {
   padding: 5px;
 }

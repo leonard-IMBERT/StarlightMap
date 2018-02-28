@@ -211,7 +211,7 @@ function getCounts() {
           for (const item of counting) {
             if (!item) continue
             if (item in acc) acc[item]++
-            else acc[item] = 0
+            else acc[item] = 1
           }
           return acc
         }, {})
@@ -238,7 +238,10 @@ function getDetailsAboutStat(stat) {
           const count = [...survivor.items, ...survivor.condition]
             .filter(elem => elem === stat)
             .length
-          details.push([survivor.Name, count])
+          details.push([survivor.Name,
+                        survivor.Position.x,
+                        survivor.Position.y,
+                        count])
         }
       }
       resolve(details)
