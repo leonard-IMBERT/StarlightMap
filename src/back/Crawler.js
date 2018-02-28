@@ -211,7 +211,7 @@ function getCounts() {
           for (const item of counting) {
             if (!item) continue
             if (item in acc) acc[item]++
-            else acc[item] = 0
+            else acc[item] = 1
           }
           return acc
         }, {})
