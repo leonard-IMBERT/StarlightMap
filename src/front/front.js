@@ -103,7 +103,6 @@ map.load('/map', 962, 924, 0, 0).then(_ => {
     }
 
     canvas.addEventListener('mousemove', e => {
-
       const { x, y } = translateCoordinate(e.offsetX, e.offsetY)
 
       let hexa = hexagons.find(h => h.isIn(x, y))
