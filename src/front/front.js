@@ -66,10 +66,10 @@ function getSurvivors(x,y) {
           .fill({
             Name: inhab.Name,
             Description: inhab.Description,
-            Postion: `${inhab.Position.x},${inhab.Position.y}`,
+            Position: `${inhab.Position.x},${inhab.Position.y}`,
             Health: `${inhab.Health}/${inhab.MaxHealth}`,
-            Items: inhab.items.toString(),
-            Conditions: inhab.condition.toString()
+            Items: inhab.items.toString().replace(/,/g,', '),
+            Conditions: inhab.condition.toString().replace(/,/g,', ')
           }).appendIn(data)
       }
     })
@@ -110,6 +110,41 @@ map.load('/map', 962, 924, 0, 0).then(_ => {
         drawer.clean()
         drawer.drawImageScale(0,0,1,map)
         hexa.draw(drawer)
+      }
+    })
+
+    canvas.addEventListener('touchstart', e => {
+      if (e.touches.length > 1) { return; }
+      e.preventDefault()
+    })
+
+    canvas.addEventListener('touchmove', e => {
+      if (e.touches.length > 1) { return; }
+      e.preventDefault()
+      const touch = e.changedTouches[0]
+
+      const { x, y } = translateCoordinate(touch.pageX, touch.pageY)
+
+      let hexa = hexagons.find(h => h.isIn(x, y))
+      if(hexa) {
+        drawer.clean()
+        drawer.drawImageScale(0,0,1,map)
+        hexa.draw(drawer, 80 + touch.radiusY)
+      }
+    })
+
+    canvas.addEventListener('touchend', e => {
+      if (e.touches.length > 1) { return; }
+      const touch = e.changedTouches[0]
+
+      const { x, y } = translateCoordinate(touch.pageX, touch.pageY)
+
+      let hexa = hexagons.find(h => h.isIn(x, y))
+      if(hexa) {
+        drawer.clean()
+        drawer.drawImageScale(0,0,1,map)
+        hexa.draw(drawer)
+        getSurvivors(hexa.coord.x, hexa.coord.y)
       }
     })
 
