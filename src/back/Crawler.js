@@ -160,7 +160,7 @@ function refresh() {
     }).run((error, result) => {
       if(error) console.error(error)
       result = JSON.parse(result);
-      for(race in result.Status) {
+      for(race of ["Humans", "Halflings", "Dwarves", "Elves"]) {
         result.Status[race] = parser(result.Status[race])
       }
       request(result.MapUrl).pipe(fs.createWriteStream('save/map.png'));
