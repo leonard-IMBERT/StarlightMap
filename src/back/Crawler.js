@@ -68,7 +68,7 @@ const StatusMongoose = mongoose.model('Status', {
 })
 
 
-function parser(data) {
+function survivorParser(data) {
   const ConditionsRegex = /Conditions: *((?:\w*[, ]?)*)/
   const ItemsRegex = /Items: *((?:\w*[, ]?)*)/
   const PosRegex = /Position: *(\d+), *(\d+)/
@@ -117,6 +117,66 @@ function parser(data) {
   return Inhabitants
 }
 
+function looseParser(data) {
+  const LooseItems = new Array();
+  const PosRegex = /(\d+), *(\d+) *:/;
+  const ItemsRegex = /\d+ [\w ]+,?/g;
+  const ItemRegex = /(\d+) ([\w ]+)/;
+
+  const lines = data.split(/\n/);
+  for (const line of lines) {
+    try {
+      const position = line.match(PosRegex);
+      const items = [];
+      for (const item of line.match(ItemsRegex)) {
+        const itemMatch = item.match(ItemRegex);
+        for (let count = 0; count < Number(itemMatch[1]); count++) {
+          items.push(itemMatch[2]);
+        }
+      }
+      LooseItems.push(new Inhabitant (
+        "Loose Items",
+        "",
+        position[1],
+        position[2],
+        0, 0, // Health, not valid
+        items,
+        ["Loose"]
+      ));
+    } catch (e) {
+      console.error(e);
+      console.error(line);
+    }
+  }
+  return LooseItems;
+}
+
+function structureParser(data) {
+  const Structures = new Array();
+  const PosRegex = /(\d+), *(\d+) *:/;
+
+  const lines = data.split(/\n/);
+  for (const line of lines) {
+    try {
+      const position = line.match(PosRegex);
+      const name = line.split(/:/)[1];
+      Structures.push(new Inhabitant (
+        name,
+        "Structure",
+        position[1],
+        position[2],
+        0, 0, // TODO: Parse health once we have example
+        [""],
+        ["Structure"]
+      ));
+    } catch (e) {
+      console.error(e);
+      console.error(line);
+    }
+  }
+  return Structures;
+}
+
 function refresh() {
   console.info("Update started")
   return nightmare
@@ -160,9 +220,11 @@ function refresh() {
     }).run((error, result) => {
       if(error) console.error(error)
       result = JSON.parse(result);
-      for(race in result.Status) {
-        result.Status[race] = parser(result.Status[race])
+      for(race of ["Humans", "Halflings", "Dwarves", "Elves"]) {
+        result.Status[race] = survivorParser(result.Status[race])
       }
+      result.Status.LooseItems = looseParser(result.Status["Loose Items"])
+      result.Status.Structures = structureParser(result.Status["Structures"])
       request(result.MapUrl).pipe(fs.createWriteStream('save/map.png'));
 
       (new StatusMongoose({
@@ -170,7 +232,9 @@ function refresh() {
         Survivors: [...result.Status.Humans,
                     ...result.Status.Halflings,
                     ...result.Status.Dwarves,
-                    ...result.Status.Elves],
+                    ...result.Status.Elves,
+                    ...result.Status.LooseItems,
+                    ...result.Status.Structures],
         Craft: result.Crafting,
         Magic: result.Magic
       })).save().then(_ => console.info("Updated"));
