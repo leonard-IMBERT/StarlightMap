@@ -241,6 +241,21 @@ function refresh() {
     }).end()
 }
 
+function getAllInfo() {
+  return new Promise((resolve, reject) => {
+    StatusMongoose.find({}, ['Survivors'], {
+      skip:0,
+      limit: 1,
+      sort: {
+        date: -1
+      },
+    }, (err, stat) => {
+      if(err) { reject(err) }
+      resolve(stat[0].Survivors)
+    })
+  })
+}
+
 function getInfoByCoord(x, y) {
   return new Promise((resolve, reject) => {
     StatusMongoose.find({}, ['Survivors'], {
@@ -317,6 +332,7 @@ module.exports = {
   getDetailsAboutStat,
   getCounts,
   getInfoByCoord,
+  getAllInfo,
   Position,
   Inhabitant,
   refresh,

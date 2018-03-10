@@ -10,6 +10,7 @@ const map = new Images()
 
 const data = document.querySelector("div#data")
 const dataBlueprint = document.querySelector("div.data")
+const dataButton = document.querySelector("button#dataButton")
 
 const stats = document.querySelector("div#stats")
 
@@ -23,6 +24,11 @@ const MetadataRequest = new Request('/metadata', {
 })
 
 const InfoRequest = (x,y) => new Request(`/info?col=${x}&row=${y}`, {
+  method: 'GET',
+  headers: (new Headers()).append('Accept', 'application/json')
+})
+
+const AllInfoRequest = () => new Request(`/allinfo`, {
   method: 'GET',
   headers: (new Headers()).append('Accept', 'application/json')
 })
@@ -54,7 +60,7 @@ function templatingData(inhabitants) {
 }
 
 function getSurvivors(x,y) {
-  fetch(InfoRequest(x,y))
+  ((x && y) ? fetch(InfoRequest(x,y)) : fetch(AllInfoRequest()))
     .then(d => d.json())
     .then(d => {
       while(data.firstChild) {
@@ -74,6 +80,8 @@ function getSurvivors(x,y) {
       }
     })
 }
+
+dataButton.addEventListener('click', e => getSurvivors());
 
 const HexagonColor = "#000000"
 

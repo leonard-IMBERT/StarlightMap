@@ -39,12 +39,17 @@ app.get('/details', (req, res) => {
 
 app.post('/refresh', (req, res) => {
   Crawler.refresh()
-  res.send("Refresh lanched")
+  res.send("Refresh launched\n")
 });
 
 app.get('/info', (req, res) => {
   res.append('Content-Type', 'application/json')
   Crawler.getInfoByCoord(req.query.col, req.query.row).then(d => res.send(d))
+})
+
+app.get('/allinfo', (req, res) => {
+  res.append('Content-Type', 'application/json')
+  Crawler.getAllInfo().then(d => res.send(d))
 })
 
 app.get('/stats', (req, res) => {
