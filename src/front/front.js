@@ -42,6 +42,8 @@ const DetailsRequest = (stat) => new Request(`/details?stat=${stat}`, {
   headers: (new Headers()).append('Accept', 'application/json')
 })
 
+const hexagons = []
+
 function translateCoordinate (x, y) {
   return {
     x: map.width/canvas.clientWidth * x,
@@ -77,6 +79,14 @@ function getSurvivors(x,y) {
             Items: inhab.items.toString().replace(/,/g,', '),
             Conditions: inhab.condition.toString().replace(/,/g,', ')
           }).appendIn(data)
+          .addEventListener('click', e => {
+            let hexa = hexagons.find(hexa => hexa.coord.x === inhab.Position.x && hexa.coord.y === inhab.Position.y)
+            if(hexa) {
+              drawer.clean()
+              drawer.drawImageScale(0,0,1,map)
+              hexa.draw(drawer)
+            }
+          })
       }
     })
 }
@@ -94,7 +104,6 @@ map.load('/map', 962, 924, 0, 0).then(_ => {
   console.log("Map drawed");
 
 
-  const hexagons = []
 
   fetchMetadata().then(metadata => {
     for(let row = 1; row <= 71; row++) {

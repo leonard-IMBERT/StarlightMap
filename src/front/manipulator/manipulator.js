@@ -21,4 +21,9 @@ export default class Card {
     this.card.remove();
     delete this;
   }
+
+  addEventListener(e, f) {
+    this.card.addEventListener(e, f)
+    return this
+  }
 }

@@ -31,6 +31,15 @@ body, html {
   align-items: baseline;
 }
 
+.data {
+  cursor: pointer;
+  width: 25%;
+}
+
+.data:hover {
+  background-color: #444444;
+}
+
 #dataButton {
   margin-left: auto;
   margin-top: 10px;
