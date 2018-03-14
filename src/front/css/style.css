@@ -31,10 +31,31 @@ body, html {
   align-items: baseline;
 }
 
+.data {
+  cursor: pointer;
+  width: 25%;
+}
+
+.data:hover {
+  background-color: #444444;
+}
+
 #dataButton {
   margin-left: auto;
+  margin-top: 10px;
+  margin-bottom: 10px;
   margin-right: auto;
   padding: 4px 10px;
+  border: 1px solid white;
+  border-radius: 5px;
+  background-color: black;
+  color:white;
+  font-family: inherit;
+}
+
+#dataButton:active {
+  background-color: white;
+  color: black;
 }
 
 #stats {
