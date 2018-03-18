@@ -1,29 +1,40 @@
-export default class Card {
-  constructor(card) {
-    this.blueprint = card
-    this.card = card.cloneNode(true);
+export default class Card extends HTMLElement {
+
+  static get ElementName() { return 'data-card' }
+  static set ElementName(data) { throw new Error('The ElementName property cannot be written') }
+
+  constructor() {
+    super();
+
+    //Attach shadow DOM
+    this.shadow = this.attachShadow({mode: 'closed'})
+
+    this.ul = document.createElement('ul')
+
+
+    const style = document.createElement('style')
+
+
+    style.textContent = `
+    ul {
+      color: inherit;
+      list-style: none;
+      font-family: inherit;
+    }`
+
+    this.shadow.append(style)
+    this.shadow.append(this.ul)
+
   }
+
 
   fill(data) {
     for(let entry in data) {
-      this.card.querySelector(`li.${entry}`).innerText = `${entry}: ${data[entry]}`
+      const li = document.createElement('li')
+      li.classList.add(entry)
+      li.textContent = `${entry}: ${data[entry]}`
+      this.ul.append(li)
     }
-    return this
-  }
-
-  appendIn(element) {
-    this.card.hidden = false
-    element.appendChild(this.card)
-    return this
-  }
-
-  remove() {
-    this.card.remove();
-    delete this;
-  }
-
-  addEventListener(e, f) {
-    this.card.addEventListener(e, f)
     return this
   }
 }

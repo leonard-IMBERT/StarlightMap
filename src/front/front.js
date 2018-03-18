@@ -1,7 +1,9 @@
 import Drawer from './drawer/Drawer'
 import Images from './drawer/Images'
 import Hexagon from './hexagon/hexagon'
-import Card from './manipulator/manipulator'
+
+import Requests from './init.js'
+
 
 const canvas = document.querySelector("canvas#map")
 
@@ -18,30 +20,6 @@ const table = document.querySelector('table#resources')
 
 const tableDetails = document.querySelector('table#resourceDetails')
 
-const MetadataRequest = new Request('/metadata', {
-  method: 'GET',
-  headers: (new Headers()).append('Accept','application/json')
-})
-
-const InfoRequest = (x,y) => new Request(`/info?col=${x}&row=${y}`, {
-  method: 'GET',
-  headers: (new Headers()).append('Accept', 'application/json')
-})
-
-const AllInfoRequest = () => new Request(`/allinfo`, {
-  method: 'GET',
-  headers: (new Headers()).append('Accept', 'application/json')
-})
-
-const StatsRequest = new Request('/stats', {
-  method: 'GET',
-  headers: (new Headers()).append('Accept','application/json')
-})
-const DetailsRequest = (stat) => new Request(`/details?stat=${stat}`, {
-  method: 'GET',
-  headers: (new Headers()).append('Accept', 'application/json')
-})
-
 const hexagons = []
 
 function translateCoordinate (x, y) {
@@ -52,49 +30,40 @@ function translateCoordinate (x, y) {
 }
 
 function fetchMetadata() {
-  return fetch(MetadataRequest).then(d => d.json())
-}
-
-function templatingData(inhabitants) {
-  const span = document.createElement('span', {
-
-  });
+  return fetch(Requests.MetadataRequest()).then(d => d.json())
 }
 
 function getSurvivors(x,y) {
-  ((x && y) ? fetch(InfoRequest(x,y)) : fetch(AllInfoRequest()))
-    .then(d => d.json())
-    .then(d => {
-      while(data.firstChild) {
-        data.removeChild(data.firstChild);
-      }
-      for(const inhab of d) {
-        console.log(inhab)
-        new Card(dataBlueprint)
-          .fill({
-            Name: inhab.Name,
-            Description: inhab.Description,
-            Position: `${inhab.Position.x},${inhab.Position.y}`,
-            Health: `${inhab.Health}/${inhab.MaxHealth}`,
-            Items: inhab.items.toString().replace(/,/g,', '),
-            Conditions: inhab.condition.toString().replace(/,/g,', ')
-          }).appendIn(data)
-          .addEventListener('click', e => {
-            let hexa = hexagons.find(hexa => hexa.coord.x === inhab.Position.x && hexa.coord.y === inhab.Position.y)
-            if(hexa) {
-              drawer.clean()
-              drawer.drawImageScale(0,0,1,map)
-              hexa.draw(drawer)
-            }
-          })
-      }
-    })
+  ((x && y) ? fetch(Requests.InfoRequest(x,y)) : fetch(Requests.AllInfoRequest()))
+  .then(d => d.json())
+  .then(d => {
+    while(data.firstChild) {
+      data.removeChild(data.firstChild);
+    }
+    for(const inhab of d) {
+      const card = document.createElement('data-card')
+      card.fill({
+        Name: inhab.Name,
+        Description: inhab.Description,
+        Position: `${inhab.Position.x},${inhab.Position.y}`,
+        Health: `${inhab.Health}/${inhab.MaxHealth}`,
+        Items: inhab.items.toString().replace(/,/g,', '),
+        Conditions: inhab.condition.toString().replace(/,/g,', ')
+      })
+      card.addEventListener('click', e => {
+        let hexa = hexagons.find(hexa => hexa.coord.x === inhab.Position.x && hexa.coord.y === inhab.Position.y)
+        if(hexa) {
+          drawer.clean()
+          drawer.drawImageScale(0,0,1,map)
+          hexa.draw(drawer)
+        }
+      })
+      data.append(card)
+    }
+  })
 }
 
 dataButton.addEventListener('click', e => getSurvivors());
-
-const HexagonColor = "#000000"
-
 
 map.load('/map', 962, 924, 0, 0).then(_ => {
 
@@ -174,7 +143,7 @@ map.load('/map', 962, 924, 0, 0).then(_ => {
   })
 }, e => console.error(e));
 
-fetch(StatsRequest).then(d => d.json()).then(d => {
+fetch(Requests.StatsRequest()).then(d => d.json()).then(d => {
 
   for (const resource in d) {
     const rescount = table.insertRow()
@@ -188,7 +157,7 @@ fetch(StatsRequest).then(d => d.json()).then(d => {
     count.className = "resourceCounts"
 
     rescount.addEventListener('click', e => {
-      fetch(DetailsRequest(resource)).then(f => f.json()).then(details => {
+      fetch(Requests.DetailsRequest(resource)).then(f => f.json()).then(details => {
         details.sort((a, b) => {
           if(a[3] === b[3]) return 0
           else if(a[3] > b[3]) return 1
@@ -206,15 +175,15 @@ fetch(StatsRequest).then(d => d.json()).then(d => {
 
           const surPos = row.insertCell()
           surPos.appendChild(document.createTextNode(
-                              `(${detail[1]},${detail[2]})`))
-          surPos.addEventListener('click',
-                                  e => getSurvivors(detail[1],detail[2]))
-          surPos.className = "location"
+            `(${detail[1]},${detail[2]})`))
+            surPos.addEventListener('click',
+            e => getSurvivors(detail[1],detail[2]))
+            surPos.className = "location"
 
-          const surCount = row.insertCell()
-          surCount.appendChild(document.createTextNode(`${detail[3]}`))
-        }
+            const surCount = row.insertCell()
+            surCount.appendChild(document.createTextNode(`${detail[3]}`))
+          }
+        })
       })
-    })
-  }
-})
+    }
+  })
