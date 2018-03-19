@@ -6,10 +6,12 @@ const Schema = mongoose.Schema;
 
 mongoose.connect('mongodb://localhost/Starlight');
 
-const nightmare = Nightmare({
-  gotoTimeout: 120000, // in ms
-  executionTimeout: 120000 // in ms
-})
+function getNightmare() {
+  return Nightmare({
+    gotoTimeout: 120000, // in ms
+    executionTimeout: 120000 // in ms
+  })
+}
 
 class Position {
   constructor(x, y) {
@@ -177,9 +179,29 @@ function structureParser(data) {
   return Structures;
 }
 
+function refreshTurn(posturl) {
+  console.info("Current turn update started: " + posturl);
+  const postid = posturl.split('#')[1];
+  return getNightmare()
+    .goto(posturl)
+    .wait(5000)
+    .evaluate(function(id) {
+      const Post = document.getElementById(id);
+      const Content = Post.getElementsByClassName("content")[0];
+      const MapUrl = Array.from(Content.children)
+                          .find(element => element.tagName === 'IMG').src;
+      return JSON.stringify(MapUrl);
+    }, postid).run((error, result) => {
+      if(error) console.error(error);
+      result = JSON.parse(result);
+      request(result).pipe(fs.createWriteStream('save/map.png'));
+      console.info("Current turn update finished");
+    }).end();
+}
+
 function refresh() {
   console.info("Update started")
-  return nightmare
+  return getNightmare()
     .goto('http://willsaveworldforgold.com/forum/viewtopic.php?f=11&t=243')
     .wait(5000)
     .evaluate(function() {
@@ -197,6 +219,9 @@ function refresh() {
       StatusPost.MapUrl = Array.from(StatusPost.content.children).find(element => element.tagName === 'IMG').src
       const StatusNode = Array.from(StatusPost.content.childNodes).filter(elem => elem.tagName !== "BR")
 
+      const TurnList = document.getElementsByClassName("quotecontent")[0].firstElementChild;
+      StatusPost.CurrentTurn = TurnList.lastElementChild.href;
+
       for(let content in StatusNode) {
         content = Number(content)
         try {
@@ -206,7 +231,7 @@ function refresh() {
             const dataDiv = Array.from(StatusNode[content + 1].children).find(elem => elem.className === 'quotecontent')
             StatusPost.Status[StatusNode[content].data] = dataDiv.firstElementChild.innerText
           }
-        } catch(e) {}
+        } catch(e) { console.error(e); }
       }
 
 
@@ -225,7 +250,8 @@ function refresh() {
       }
       result.Status.LooseItems = looseParser(result.Status["Loose Items"])
       result.Status.Structures = structureParser(result.Status["Structures"])
-      request(result.MapUrl).pipe(fs.createWriteStream('save/map.png'));
+
+      refreshTurn(result.CurrentTurn);
 
       (new StatusMongoose({
         date: new Date(),
