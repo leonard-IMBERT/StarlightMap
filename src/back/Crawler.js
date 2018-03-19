@@ -77,7 +77,7 @@ function survivorParser(data) {
   const HealthRegex = /Health: *(\d+)\/(\d+)/
 
   const Inhabitants = new Array();
-  const persoMatch = data.split(/\n ?\n/)
+  const persoMatch = data.trim().split(/\n ?\n/)
 
   for(let inhabitant of persoMatch) {
     const details = inhabitant.split(/\n/)
@@ -179,17 +179,14 @@ function structureParser(data) {
   return Structures;
 }
 
-function refreshTurn(posturl) {
-  console.info("Current turn update started: " + posturl);
-  const postid = posturl.split('#')[1];
+function refreshTurn(turn) {
+  console.info("Current turn update started: " + turn.designation);
+  const postid = turn.url.split('#')[1];
   return getNightmare()
-    .goto(posturl)
+    .goto(turn.url)
     .wait(5000)
     .evaluate(function(id) {
-      const Post = document.getElementById(id);
-      const Content = Post.getElementsByClassName("content")[0];
-      const MapUrl = Array.from(Content.children)
-                          .find(element => element.tagName === 'IMG').src;
+      const MapUrl = document.querySelector(`#${id} .content > img`).src
       return JSON.stringify(MapUrl);
     }, postid).run((error, result) => {
       if(error) console.error(error);
@@ -206,35 +203,65 @@ function refresh() {
     .wait(5000)
     .evaluate(function() {
 
-      const Posts = document.getElementsByClassName("post");
+      const CrawlStatus = {
+        BEGINNING: 0,
+        TURN_LIST: 1,
+        STATUS_LIST: 2,
+        MAP_LIST: 3,
+        LOOSE_ITEMS: 4,
+        STRUCTURE: 5,
+      }
+
+      const Posts = document.getElementsByClassName('post');
       const StatusPost = {
         post: Posts[0],
-        Status: {},
         MapUrl: '',
         Crafting: '',
-        Magic: ''
+        Magic: '',
+        Survivors: '',
+        Turns: [],
+        LooseItems:'',
+        Structures: '',
       }
 
-      StatusPost.content = StatusPost.post.getElementsByClassName("content")[0];
-      StatusPost.MapUrl = Array.from(StatusPost.content.children).find(element => element.tagName === 'IMG').src
-      const StatusNode = Array.from(StatusPost.content.childNodes).filter(elem => elem.tagName !== "BR")
+      StatusPost.content = StatusPost.post.getElementsByClassName('content')[0];
+      StatusPost.MapUrl = StatusPost.content.querySelector('img').src
+      const StatusNode =
+        Array.from(StatusPost.content.querySelectorAll('.content > :not(br)'))
 
-      const TurnList = document.getElementsByClassName("quotecontent")[0].firstElementChild;
-      StatusPost.CurrentTurn = TurnList.lastElementChild.href;
 
-      for(let content in StatusNode) {
-        content = Number(content)
-        try {
-          if(StatusNode[content].nodeType === Node.TEXT_NODE
-            && StatusNode[content + 1].tagName === 'DIV'
-          ) {
-            const dataDiv = Array.from(StatusNode[content + 1].children).find(elem => elem.className === 'quotecontent')
-            StatusPost.Status[StatusNode[content].data] = dataDiv.firstElementChild.innerText
+      let status = CrawlStatus.BEGINNING
+
+      for(let content of StatusNode) {
+        if(content.tagName === 'SPAN') status ++
+        else {
+          switch (status) {
+            case CrawlStatus.TURN_LIST:
+                for(let a of content.querySelectorAll('.quotecontent a')) {
+                  StatusPost.Turns.push({designation: a.text, url: a.href})
+                }
+              break;
+            case CrawlStatus.STATUS_LIST:
+                StatusPost.Survivors += (content.querySelector('.quotecontent > div').innerText + `\n\n`)
+              break;
+            case CrawlStatus.MAP_LIST:
+                StatusPost.MapUrl = content.src
+              break;
+            case CrawlStatus.LOOSE_ITEMS:
+                StatusPost.LooseItems = content.querySelector('.quotecontent > div').innerText
+                status ++
+              break;
+            case CrawlStatus.STRUCTURE:
+                StatusPost.Structures = content.querySelector('.quotecontent > div').innerText
+              break;
+            default:
+              break;
           }
-        } catch(e) { console.error(e); }
+        }
       }
 
 
+      //TODO: Proprely parse the craft and the magic
       const CraftingPost = Posts[1];
       StatusPost.Crafting = Array.from(CraftingPost.getElementsByClassName("content")[0].childNodes).find(elem => elem.nodeType === Node.TEXT_NODE).data
 
@@ -242,25 +269,18 @@ function refresh() {
       StatusPost.Magic = Array.from(MagicPost.getElementsByClassName("content")[0].childNodes).find(elem => elem.nodeType === Node.TEXT_NODE).data
 
       return JSON.stringify(StatusPost)
-    }).run((error, result) => {
+    })
+    .run((error, result) => {
       if(error) console.error(error)
       result = JSON.parse(result);
-      for(race of ["Humans", "Halflings", "Dwarves", "Elves"]) {
-        result.Status[race] = survivorParser(result.Status[race])
-      }
-      result.Status.LooseItems = looseParser(result.Status["Loose Items"])
-      result.Status.Structures = structureParser(result.Status["Structures"])
-
-      refreshTurn(result.CurrentTurn);
+      result.Survivors = survivorParser(result.Survivors)
+      result.LooseItems = looseParser(result.LooseItems)
+      result.Structures = structureParser(result.Structures)
+      refreshTurn(result.Turns[result.Turns.length - 1]);
 
       (new StatusMongoose({
         date: new Date(),
-        Survivors: [...result.Status.Humans,
-                    ...result.Status.Halflings,
-                    ...result.Status.Dwarves,
-                    ...result.Status.Elves,
-                    ...result.Status.LooseItems,
-                    ...result.Status.Structures],
+        Survivors: result.Survivors,
         Craft: result.Crafting,
         Magic: result.Magic
       })).save().then(_ => console.info("Updated"));
