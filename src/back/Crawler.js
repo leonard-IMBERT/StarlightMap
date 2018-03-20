@@ -278,9 +278,13 @@ function refresh() {
       result.Structures = structureParser(result.Structures)
       refreshTurn(result.Turns[result.Turns.length - 1]);
 
+      request(result.MapUrl).pipe(fs.createWriteStream('save/blankmap.png'));
+
       (new StatusMongoose({
         date: new Date(),
-        Survivors: result.Survivors,
+        Survivors: [...result.Survivors,
+                    ...result.LooseItems,
+                    ...result.Structures],
         Craft: result.Crafting,
         Magic: result.Magic
       })).save().then(_ => console.info("Updated"));

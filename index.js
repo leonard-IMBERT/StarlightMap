@@ -20,6 +20,10 @@ app.get('/map', (req, res) => {
   res.sendFile(path.join(__dirname, 'save/map.png'));
 });
 
+app.get('/blankmap', (req, res) => {
+  res.sendFile(path.join(__dirname, 'save/blankmap.png'));
+});
+
 app.get('/script', (req, res) => {
   res.sendFile(path.join(__dirname, 'compile/script.front.js'));
 });
