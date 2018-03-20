@@ -28,14 +28,15 @@ class Position {
 }
 
 class Inhabitant {
-  constructor(name, des, posX, posY, currentHealth, maxHealth, items, conditions) {
+  constructor(name, des, posX, posY, currentHealth, maxHealth, items, conditions, profession) {
     this.Name = name;
     this.Description = des
     this.Position = new Position(posX, posY);
     this.Health = currentHealth;
     this.MaxHealth = maxHealth;
     this.items = items;
-    this.condition = conditions
+    this.condition = conditions;
+    this.profession = profession;
   }
 
   valueOf() {
@@ -46,7 +47,8 @@ class Inhabitant {
       Health: this.Health,
       MaxHealth: this.MaxHealth,
       items: this.items,
-      condition: this.condition
+      condition: this.condition,
+      profession: this.profession,
     }
   }
 }
@@ -60,7 +62,8 @@ const InhabitantSchema = new Schema({
   Health: 'number',
   MaxHealth: 'number',
   items: ['string'],
-  condition: ['string']
+  condition: ['string'],
+  profession: ['string'],
 })
 const StatusMongoose = mongoose.model('Status', {
   date: Date,
@@ -75,6 +78,7 @@ function survivorParser(data) {
   const ItemsRegex = /Items: *((?:\w*[, ]?)*)/
   const PosRegex = /Position: *(\d+), *(\d+)/
   const HealthRegex = /Health: *(\d+)\/(\d+)/
+  const ProfessionRegex = /Profession: *(([\w?]*[, ]?)*)/
 
   const Inhabitants = new Array();
   const persoMatch = data.trim().split(/\n ?\n/)
@@ -93,6 +97,7 @@ function survivorParser(data) {
     const health = inhabitant.match(HealthRegex)
     const items = inhabitant.match(ItemsRegex)
     const conditions = inhabitant.match(ConditionsRegex)
+    const profession = inhabitant.match(ProfessionRegex)
 
     /*
      * 1: Name
@@ -103,6 +108,7 @@ function survivorParser(data) {
      * 6: HealthMax
      * 7: Items
      * 8: Conditions
+     * 9: Profession
      */
 
     Inhabitants.push(new Inhabitant(
@@ -113,7 +119,8 @@ function survivorParser(data) {
       health[1],
       health[2],
       items[1].split(/, */),
-      conditions[1].split(/, */)
+      conditions[1].split(/, */),
+      profession ? profession[1].split(/, */) : [""],
     ))
   }
   return Inhabitants
@@ -122,8 +129,8 @@ function survivorParser(data) {
 function looseParser(data) {
   const LooseItems = new Array();
   const PosRegex = /(\d+), *(\d+) *:/;
-  const ItemsRegex = /\d+ [\w ]+,?/g;
-  const ItemRegex = /(\d+) ([\w ]+)/;
+  const ItemsRegex = /\d+ [\w *]+,?/g;
+  const ItemRegex = /(\d+) ([\w *]+)/;
 
   const lines = data.split(/\n/);
   for (const line of lines) {
@@ -143,7 +150,8 @@ function looseParser(data) {
         position[2],
         0, 0, // Health, not valid
         items,
-        ["Loose"]
+        ["Loose"],
+        [""],
       ));
     } catch (e) {
       console.error(e);
@@ -169,7 +177,8 @@ function structureParser(data) {
         position[2],
         0, 0, // TODO: Parse health once we have example
         [""],
-        ["Structure"]
+        ["Structure"],
+        [""]
       ));
     } catch (e) {
       console.error(e);
@@ -326,7 +335,9 @@ function getInfoByCoord(x, y) {
 
 function getCounts() {
   return new Promise((resolve, reject) => {
-    StatusMongoose.find({}, ['Survivors.items', 'Survivors.condition'], {
+    StatusMongoose.find({}, ['Survivors.items',
+                             'Survivors.condition',
+                             'Survivors.profession'], {
       skip:0,
       limit: 1,
       sort: {
@@ -336,7 +347,9 @@ function getCounts() {
       if(err) { reject(err) }
       const count = stat[0].Survivors
         .reduce((acc, cur) => {
-          const counting = cur.items.concat(cur.condition)
+          const counting = cur.items
+                   .concat(cur.condition)
+                   .concat(cur.profession)
           for (const item of counting) {
             if (!item) continue
             if (item in acc) acc[item]++
@@ -362,9 +375,11 @@ function getDetailsAboutStat(stat) {
       const details = []
       const survivors = d[0].Survivors;
       for(const survivor of survivors) {
-        if(survivor.items.find(e => e === stat)
-          || survivor.condition.find(e => e === stat)) {
-          const count = [...survivor.items, ...survivor.condition]
+        const search = survivor.items
+               .concat(survivor.condition)
+               .concat(survivor.profession)
+        if(search.find(e => e === stat)) {
+          const count = search
             .filter(elem => elem === stat)
             .length
           details.push([survivor.Name,

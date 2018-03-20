@@ -47,14 +47,20 @@ function getSurvivors(x,y) {
     }
     for(const inhab of d) {
       const card = document.createElement('data-card')
-      card.fill({
+      const survivor = {
         Name: inhab.Name,
         Description: inhab.Description,
         Position: `${inhab.Position.x},${inhab.Position.y}`,
         Health: `${inhab.Health}/${inhab.MaxHealth}`,
-        Items: inhab.items.toString().replace(/,/g,', '),
-        Conditions: inhab.condition.toString().replace(/,/g,', ')
-      })
+        Items: inhab.items.toString().replace(/,/g,', ')
+      }
+      if (!inhab.condition.includes("")) {
+        survivor.Conditions = inhab.condition.toString().replace(/,/g,', ')
+      }
+      if (!inhab.profession.includes("")) {
+        survivor.Profession = inhab.profession.toString().replace(/,/g, ', ')
+      }
+      card.fill(survivor)
       card.addEventListener('click', e => {
         let hexa = hexagons.find(hexa => hexa.coord.x === inhab.Position.x && hexa.coord.y === inhab.Position.y)
         if(hexa) {
