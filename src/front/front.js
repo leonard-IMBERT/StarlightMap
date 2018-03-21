@@ -156,16 +156,16 @@ markmap.load('/map', 962, 924, 0, 0).then(_ => {
 
   markButton.addEventListener('click', e => {
     drawMap(markmap);
-    markButton.className = "current";
-    blankButton.className = "";
+    markButton.classList.add('content');
+    blankButton.classList.remove('content');
   });
 }, e => console.error(e));
 
 blankmap.load('/blankmap', 962, 924, 0, 0).then(_ => {
   blankButton.addEventListener('click', e => {
     drawMap(blankmap);
-    markButton.className = "";
-    blankButton.className = "current";
+    markButton.classList.remove('content');
+    blankButton.classList.add('content');
   });
 }, e => console.error(e));
 
@@ -173,14 +173,14 @@ fetch(Requests.StatsRequest()).then(d => d.json()).then(d => {
 
   for (const resource in d) {
     const rescount = table.insertRow()
-    rescount.className = "resourceCounts"
+    rescount.classList.add('resourceCounts')
     const name = rescount.insertCell()
-    name.className = "resourceCounts"
+    name.classList.add('resourceCounts')
     name.appendChild(document.createTextNode(`${resource}`))
 
     const count = rescount.insertCell()
     count.appendChild(document.createTextNode(`${d[resource]}`))
-    count.className = "resourceCounts"
+    count.classList.add('resourceCounts')
 
     rescount.addEventListener('click', e => {
       fetch(Requests.DetailsRequest(resource)).then(f => f.json()).then(details => {
@@ -204,7 +204,7 @@ fetch(Requests.StatsRequest()).then(d => d.json()).then(d => {
             `(${detail[1]},${detail[2]})`))
             surPos.addEventListener('click',
             e => getSurvivors(detail[1],detail[2]))
-            surPos.className = "location"
+            surPos.classList.add('location')
 
             const surCount = row.insertCell()
             surCount.appendChild(document.createTextNode(`${detail[3]}`))
