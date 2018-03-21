@@ -8,11 +8,16 @@ import Requests from './init.js'
 const canvas = document.querySelector("canvas#map")
 
 const drawer = new Drawer(canvas);
-const map = new Images()
+const markmap = new Images()
+const blankmap = new Images();
+let map = markmap;
 
 const data = document.querySelector("div#data")
 const dataBlueprint = document.querySelector("div.data")
 const dataButton = document.querySelector("button#dataButton")
+
+const markButton = document.querySelector("button#markButton")
+const blankButton = document.querySelector("button#blankButton")
 
 const stats = document.querySelector("div#stats")
 
@@ -42,14 +47,20 @@ function getSurvivors(x,y) {
     }
     for(const inhab of d) {
       const card = document.createElement('data-card')
-      card.fill({
+      const survivor = {
         Name: inhab.Name,
         Description: inhab.Description,
         Position: `${inhab.Position.x},${inhab.Position.y}`,
         Health: `${inhab.Health}/${inhab.MaxHealth}`,
-        Items: inhab.items.toString().replace(/,/g,', '),
-        Conditions: inhab.condition.toString().replace(/,/g,', ')
-      })
+        Items: inhab.items.toString().replace(/,/g,', ')
+      }
+      if (!inhab.condition.includes("")) {
+        survivor.Conditions = inhab.condition.toString().replace(/,/g,', ')
+      }
+      if (!inhab.profession.includes("")) {
+        survivor.Profession = inhab.profession.toString().replace(/,/g, ', ')
+      }
+      card.fill(survivor)
       card.addEventListener('click', e => {
         let hexa = hexagons.find(hexa => hexa.coord.x === inhab.Position.x && hexa.coord.y === inhab.Position.y)
         if(hexa) {
@@ -65,14 +76,15 @@ function getSurvivors(x,y) {
 
 dataButton.addEventListener('click', e => getSurvivors());
 
-map.load('/map', 962, 924, 0, 0).then(_ => {
-
-  console.log("Map loaded");
+function drawMap(m) {
+  map = m;
   drawer.setSize(map.width, map.height);
+  drawer.clean();
   drawer.drawImageScale(0,0,1,map);
-  console.log("Map drawed");
+}
 
-
+markmap.load('/map', 962, 924, 0, 0).then(_ => {
+  drawMap(markmap);
 
   fetchMetadata().then(metadata => {
     for(let row = 1; row <= 71; row++) {
@@ -141,6 +153,20 @@ map.load('/map', 962, 924, 0, 0).then(_ => {
       }
     })
   })
+
+  markButton.addEventListener('click', e => {
+    drawMap(markmap);
+    markButton.className = "current";
+    blankButton.className = "";
+  });
+}, e => console.error(e));
+
+blankmap.load('/blankmap', 962, 924, 0, 0).then(_ => {
+  blankButton.addEventListener('click', e => {
+    drawMap(blankmap);
+    markButton.className = "";
+    blankButton.className = "current";
+  });
 }, e => console.error(e));
 
 fetch(Requests.StatsRequest()).then(d => d.json()).then(d => {

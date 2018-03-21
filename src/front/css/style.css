@@ -48,7 +48,7 @@ data-card:hover {
   background-color: #444444;
 }
 
-#dataButton {
+button {
   margin-top: 10px;
   margin-bottom: 10px;
   margin-right: 15px;
@@ -60,7 +60,7 @@ data-card:hover {
   font-family: inherit;
 }
 
-#dataButton:active {
+button:active, button.current {
   background-color: white;
   color: black;
 }
