@@ -156,16 +156,16 @@ markmap.load('/map', 962, 924, 0, 0).then(_ => {
 
   markButton.addEventListener('click', e => {
     drawMap(markmap);
-    markButton.classList.add('content');
-    blankButton.classList.remove('content');
+    markButton.classList.add('current');
+    blankButton.classList.remove('current');
   });
 }, e => console.error(e));
 
 blankmap.load('/blankmap', 962, 924, 0, 0).then(_ => {
   blankButton.addEventListener('click', e => {
     drawMap(blankmap);
-    markButton.classList.remove('content');
-    blankButton.classList.add('content');
+    markButton.classList.remove('current');
+    blankButton.classList.add('current');
   });
 }, e => console.error(e));
 
