@@ -85,7 +85,7 @@ function getSurvivors(x,y) {
         let hexa = hexagons.find(hexa => hexa.coord.x === inhab.Position.x && hexa.coord.y === inhab.Position.y)
         if(hexa) {
           drawMap(map)
-          hexa.draw(drawer)
+          hexa.draw(drawer, zoomer, zoomOffset())
         }
       })
       data.append(card)
@@ -168,7 +168,7 @@ markmap.load('/map', MAP_WIDTH, MAP_HEIGHT, 0, 0).then(_ => {
       let hexa = hexagons.find(h => h.isIn(x, y))
       if(hexa) {
         drawMap(map)
-        hexa.draw(drawer)
+        hexa.draw(drawer, zoomer, zoomOffset())
         getSurvivors(hexa.coord.x, hexa.coord.y)
       }
     })
