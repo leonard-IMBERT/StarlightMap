@@ -1,4 +1,5 @@
 import Card from './manipulator/manipulator'
+import CardComponent from './manipulator/manipulator';
 
 export default class Requests {
   static MetadataRequest() { return new Request('/metadata', {
@@ -27,5 +28,6 @@ export default class Requests {
   })}
 }
 
-
-customElements.define(Card.ElementName, Card);
+if(navigator.userAgent.indexOf("Chrome") >  -1) {
+  customElements.define(CardComponent.ElementName, CardComponent);
+}

@@ -4,6 +4,7 @@ import Zoomer from './drawer/Zoomer'
 import Hexagon from './hexagon/hexagon'
 
 import Requests from './init.js'
+import { Card } from './manipulator/manipulator';
 
 const MAP_WIDTH = 962
 const MAP_HEIGHT = 924
@@ -66,7 +67,15 @@ function getSurvivors(x,y) {
       data.removeChild(data.firstChild);
     }
     for(const inhab of d) {
-      const card = document.createElement('data-card')
+      let card;
+      let cardObject;
+      if(navigator.userAgent.indexOf('Chrome') > -1) {
+        card = document.createElement('data-card')
+        cardObject = card
+      } else {
+        cardObject = new Card()
+        card = cardObject.div
+      }
       const survivor = {
         Name: inhab.Name,
         Description: inhab.Description,
@@ -80,7 +89,7 @@ function getSurvivors(x,y) {
       if (!inhab.profession.includes("")) {
         survivor.Profession = inhab.profession.toString().replace(/,/g, ', ')
       }
-      card.fill(survivor)
+      cardObject.fill(survivor)
       card.addEventListener('click', e => {
         let hexa = hexagons.find(hexa => hexa.coord.x === inhab.Position.x && hexa.coord.y === inhab.Position.y)
         if(hexa) {
