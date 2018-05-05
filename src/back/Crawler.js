@@ -164,18 +164,21 @@ function looseParser(data) {
 function structureParser(data) {
   const Structures = new Array();
   const PosRegex = /(\d+), *(\d+) *:/;
+  const HealthRegex = /(\d+)\/(\d+) health/;
 
   const lines = data.split(/\n/);
   for (const line of lines) {
     try {
       const position = line.match(PosRegex);
       const name = line.split(/:/)[1];
+      const health = line.match(HealthRegex);
       Structures.push(new Inhabitant (
         name,
         "Structure",
         position[1],
         position[2],
-        0, 0, // TODO: Parse health once we have example
+        health ? health[1] : 0,
+        health ? health[2] : 0,
         [""],
         ["Structure"],
         [""]
