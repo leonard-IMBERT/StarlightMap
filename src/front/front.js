@@ -139,10 +139,13 @@ function drawMap(m) {
 // The search bar
 inputSearch.addEventListener('change', (e) => {
 
+  // storing the search value in case we reload th survivors
+  const searchValue = e.target.value.toLowerCase()
+
   const search = () => cards.forEach((element) => {
     if(!element.cardObject.data.Name
       .toLowerCase()
-      .match(new RegExp(e.target.value.toLowerCase()))
+      .match(new RegExp(searchValue))
     ) {
       element.card.hidden = true
     } else {
@@ -150,7 +153,10 @@ inputSearch.addEventListener('change', (e) => {
     }
   })
 
-  if(cards.length <= 0) getSurvivors().then(search)
+  if(cards.length <= 0) getSurvivors().then(() => {
+    e.target.value = searchValue
+    search()
+  })
   else search()
   
 })
