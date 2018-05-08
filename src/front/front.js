@@ -38,7 +38,6 @@ const hexagons = []
 
 let cards = []
 
-
 const factorWidth = () => map.width /canvas.clientWidth / zoomer.scale
 const factorHeight = () => map.height /canvas.clientHeight / zoomer.scale
 
@@ -67,6 +66,9 @@ function getSurvivors(x, y) {
   return (((x && y) ? fetch(Requests.InfoRequest(x,y)) : fetch(Requests.AllInfoRequest()))
   .then(d => d.json())
   .then(d => {
+
+    // Cleaning the search
+    inputSearch.value = ""
 
     // Removing all the card
     while(data.lastChild && data.lastChild.nodeName === 'DATA-CARD') {
@@ -134,6 +136,7 @@ function drawMap(m) {
   zoomer.drawZoomed((x, y, scale) => drawer.drawImageScale(x,y, scale ,map), 0, 0);
 }
 
+// The search bar
 inputSearch.addEventListener('change', (e) => {
 
   const search = () => cards.forEach((element) => {
