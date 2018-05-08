@@ -67,6 +67,7 @@ const InhabitantSchema = new Schema({
 })
 const StatusMongoose = mongoose.model('Status', {
   date: Date,
+  Turn: String,
   Survivors: [InhabitantSchema],
   Craft: String,
   Magic: String
@@ -294,6 +295,7 @@ function refresh() {
 
       (new StatusMongoose({
         date: new Date(),
+        Turn: result.Turns[result.Turns.length - 1].designation,
         Survivors: [...result.Survivors,
                     ...result.LooseItems,
                     ...result.Structures],
@@ -301,6 +303,21 @@ function refresh() {
         Magic: result.Magic
       })).save().then(_ => console.info("Updated"));
     }).end()
+}
+
+function getTurnInfo() {
+  return new Promise((resolve, reject) => {
+    StatusMongoose.find({}, 'Turn', {
+      skip:0,
+      limit: 1,
+      sort: {
+        date: -1
+      },
+    }, (err, stat) => {
+      if(err) { reject(err) }
+      resolve(stat)
+    })
+  })
 }
 
 function getAllInfo() {
@@ -397,6 +414,7 @@ function getDetailsAboutStat(stat) {
 }
 
 module.exports = {
+  getTurnInfo,
   getDetailsAboutStat,
   getCounts,
   getInfoByCoord,

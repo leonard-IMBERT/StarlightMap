@@ -7,6 +7,11 @@ export default class Requests {
     headers: (new Headers()).append('Accept','application/json')
   })}
 
+  static TurnRequest() { return new Request('/turn', {
+    method: 'GET',
+    headers: (new Headers()).append('Accept','application/json')
+  })}
+
   static InfoRequest(x,y) { return new Request(`/info?col=${x}&row=${y}`, {
     method: 'GET',
     headers: (new Headers()).append('Accept', 'application/json')

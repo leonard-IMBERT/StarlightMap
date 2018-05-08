@@ -28,6 +28,8 @@ const inputSearch = document.querySelector('input#search-survivor')
 const markButton = document.querySelector("button#markButton")
 const blankButton = document.querySelector("button#blankButton")
 
+const turnTitle = document.querySelector("h1#turn")
+
 const stats = document.querySelector("div#stats")
 
 const table = document.querySelector('table#resources')
@@ -60,6 +62,10 @@ function translateCoordinate (x, y) {
 
 function fetchMetadata() {
   return fetch(Requests.MetadataRequest()).then(d => d.json())
+}
+
+function fetchTurn() {
+  return fetch(Requests.TurnRequest()).then(d => d.json())
 }
 
 function getSurvivors(x, y) {
@@ -291,15 +297,18 @@ fetch(Requests.StatsRequest()).then(d => d.json()).then(d => {
 
           const surPos = row.insertCell()
           surPos.appendChild(document.createTextNode(
-            `(${detail[1]},${detail[2]})`))
-            surPos.addEventListener('click',
-            e => getSurvivors(detail[1],detail[2]))
-            surPos.classList.add('location')
+          `(${detail[1]},${detail[2]})`))
+          surPos.addEventListener('click',
+          e => getSurvivors(detail[1],detail[2]))
+          surPos.classList.add('location')
 
-            const surCount = row.insertCell()
-            surCount.appendChild(document.createTextNode(`${detail[3]}`))
-          }
-        })
+          const surCount = row.insertCell()
+          surCount.appendChild(document.createTextNode(`${detail[3]}`))
+        }
       })
-    }
-  })
+    })
+  }
+})
+fetchTurn().then(d => {
+  turnTitle.textContent = d[0].Turn
+})

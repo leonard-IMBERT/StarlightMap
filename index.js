@@ -61,6 +61,11 @@ app.get('/stats', (req, res) => {
   Crawler.getCounts().then(d => res.send(d))
 })
 
+app.get('/turn', (req, res) => {
+  res.append('Content-Type', 'application/json')
+  Crawler.getTurnInfo().then((d) => res.send(d))
+})
+
 const port = process.env.STARLIGHT_PORT || 3000
 
 app.listen(port, _ => {
