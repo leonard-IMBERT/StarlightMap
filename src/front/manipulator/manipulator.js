@@ -7,7 +7,7 @@ export default class CardComponent extends HTMLElement {
     super();
 
     //Attach shadow DOM
-    this.shadow = this.attachShadow({mode: 'closed'})
+    this.shadow = this.attachShadow({mode: 'open'})
 
     this.ul = document.createElement('ul')
 
@@ -29,6 +29,7 @@ export default class CardComponent extends HTMLElement {
 
 
   fill(data) {
+    this.data = data
     for(let entry in data) {
       const li = document.createElement('li')
       li.classList.add(entry)
@@ -66,6 +67,7 @@ export class Card {
 
 
   fill(data) {
+    this.data = data
     for(let entry in data) {
       const li = document.createElement('li')
       li.classList.add(entry)

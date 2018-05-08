@@ -23,6 +23,8 @@ const data = document.querySelector("div#data")
 const dataBlueprint = document.querySelector("div.data")
 const dataButton = document.querySelector("button#dataButton")
 
+const inputSearch = document.querySelector('input#search-survivor')
+
 const markButton = document.querySelector("button#markButton")
 const blankButton = document.querySelector("button#blankButton")
 
@@ -33,6 +35,8 @@ const table = document.querySelector('table#resources')
 const tableDetails = document.querySelector('table#resourceDetails')
 
 const hexagons = []
+
+let cards = []
 
 
 const factorWidth = () => map.width /canvas.clientWidth / zoomer.scale
@@ -59,14 +63,22 @@ function fetchMetadata() {
   return fetch(Requests.MetadataRequest()).then(d => d.json())
 }
 
-function getSurvivors(x,y) {
-  ((x && y) ? fetch(Requests.InfoRequest(x,y)) : fetch(Requests.AllInfoRequest()))
+function getSurvivors(x, y) {
+  return (((x && y) ? fetch(Requests.InfoRequest(x,y)) : fetch(Requests.AllInfoRequest()))
   .then(d => d.json())
   .then(d => {
-    while(data.firstChild) {
-      data.removeChild(data.firstChild);
+
+    // Removing all the card
+    while(data.lastChild && data.lastChild.nodeName === 'DATA-CARD') {
+      data.removeChild(data.lastChild);
     }
+    cards = []
+
+
+    // Populating the data
     for(const inhab of d) {
+
+      // Handling firefox comptibility
       let card;
       let cardObject;
       if(navigator.userAgent.indexOf('Chrome') > -1) {
@@ -76,6 +88,8 @@ function getSurvivors(x,y) {
         cardObject = new Card()
         card = cardObject.div
       }
+
+      // Creating the survivor for data-card
       const survivor = {
         Name: inhab.Name,
         Description: inhab.Description,
@@ -83,13 +97,19 @@ function getSurvivors(x,y) {
         Health: `${inhab.Health}/${inhab.MaxHealth}`,
         Items: inhab.items.toString().replace(/,/g,', ')
       }
+
+       // Pretifiying the condition and profession
       if (!inhab.condition.includes("")) {
         survivor.Conditions = inhab.condition.toString().replace(/,/g,', ')
       }
       if (!inhab.profession.includes("")) {
         survivor.Profession = inhab.profession.toString().replace(/,/g, ', ')
       }
+
+      // Fill the card
       cardObject.fill(survivor)
+
+      // Add event for click
       card.addEventListener('click', e => {
         let hexa = hexagons.find(hexa => hexa.coord.x === inhab.Position.x && hexa.coord.y === inhab.Position.y)
         if(hexa) {
@@ -97,9 +117,12 @@ function getSurvivors(x,y) {
           hexa.draw(drawer, zoomer, zoomOffset())
         }
       })
+
+      // Populating data
       data.append(card)
+      cards.push({cardObject, card})
     }
-  })
+  }))
 }
 
 dataButton.addEventListener('click', e => getSurvivors());
@@ -110,6 +133,24 @@ function drawMap(m) {
   drawer.clean();
   zoomer.drawZoomed((x, y, scale) => drawer.drawImageScale(x,y, scale ,map), 0, 0);
 }
+
+inputSearch.addEventListener('change', (e) => {
+
+  const search = () => cards.forEach((element) => {
+    if(!element.cardObject.data.Name
+      .toLowerCase()
+      .match(new RegExp(e.target.value.toLowerCase()))
+    ) {
+      element.card.hidden = true
+    } else {
+      element.card.hidden = false
+    }
+  })
+
+  if(cards.length <= 0) getSurvivors().then(search)
+  else search()
+  
+})
 
 markmap.load('/map', MAP_WIDTH, MAP_HEIGHT, 0, 0).then(_ => {
   drawMap(markmap);
