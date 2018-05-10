@@ -85,20 +85,21 @@ function survivorParser(data) {
   const persoMatch = data.trim().split(/\n ?\n/)
 
   for(let inhabitant of persoMatch) {
+    
     const details = inhabitant.split(/\n/)
-
     //TODO: clean temporary fix
-    if(
-      details[1].match(PosRegex) ||
-      details[1].match(HealthRegex) ||
-      details[1].match(ItemsRegex) ||
-      details[1].match(ConditionsRegex)) details[1] = ""
+    if(!(details.length < 2)) {
+      if(
+        details[1].match(PosRegex) ||
+        details[1].match(HealthRegex) ||
+        details[1].match(ItemsRegex) ||
+        details[1].match(ConditionsRegex)) details[1] = ""
 
-    const position = inhabitant.match(PosRegex)
-    const health = inhabitant.match(HealthRegex)
-    const items = inhabitant.match(ItemsRegex)
-    const conditions = inhabitant.match(ConditionsRegex)
-    const profession = inhabitant.match(ProfessionRegex)
+      const position = inhabitant.match(PosRegex)
+      const health = inhabitant.match(HealthRegex)
+      const items = inhabitant.match(ItemsRegex)
+      const conditions = inhabitant.match(ConditionsRegex)
+      const profession = inhabitant.match(ProfessionRegex)
 
     /*
      * 1: Name
@@ -112,17 +113,18 @@ function survivorParser(data) {
      * 9: Profession
      */
 
-    Inhabitants.push(new Inhabitant(
-      details[0],
-      details[1],
-      position[1],
-      position[2],
-      health[1],
-      health[2],
-      items[1].split(/, */),
-      conditions[1].split(/, */),
-      profession ? profession[1].split(/, */) : [""],
-    ))
+      Inhabitants.push(new Inhabitant(
+        details[0],
+        details[1],
+        position[1],
+        position[2],
+        health[1],
+        health[2],
+        items[1].split(/, */),
+        conditions[1].split(/, */),
+        profession ? profession[1].split(/, */) : [""],
+      ))
+    }
   }
   return Inhabitants
 }
