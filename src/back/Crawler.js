@@ -65,14 +65,38 @@ const InhabitantSchema = new Schema({
   condition: ['string'],
   profession: ['string'],
 })
+
+const EquipementSchema = new Schema({
+  imageUrl: 'string',
+  desc: 'string',
+  bonus: 'string',
+  ability: 'string',
+})
+
+const StructureSchema = new Schema({
+  imageUrl: 'string',
+  desc: 'string',
+  health: 'number',
+})
+
 const StatusMongoose = mongoose.model('Status', {
   date: Date,
   Turn: String,
   Survivors: [InhabitantSchema],
-  Craft: String,
+  Craft: {
+    equipements: [EquipementSchema],
+    structures: [StructureSchema],
+  },
   Magic: String
 })
 
+
+function structureTechParser(data) {
+  const HealthRegex = /Health: *(\d)+/
+
+  if(data.health) { data.health = data.health.match(HealthRegex)[1] }
+  return data
+}
 
 function survivorParser(data) {
   const ConditionsRegex = /Conditions: *((?:\w*[, ]?)*)/
@@ -289,8 +313,166 @@ function refresh() {
 
 
       //TODO: Proprely parse the craft and the magic
-      const CraftingPost = Posts[1];
-      StatusPost.Crafting = Array.from(CraftingPost.getElementsByClassName("content")[0].childNodes).find(elem => elem.nodeType === Node.TEXT_NODE).data
+
+
+      // The differents informations about an equipement
+      const CrawlEquipement = {
+        IMAGE: 0,
+        DESCRIPTION: 1,
+        BONUS: 2,
+        ABILITY: 3,
+      }
+
+      // The differents informations about a structure
+      const CrawlStructure = {
+        IMAGE: 0,
+        HEALTH: 1,
+        DESCRIPTION: 2,
+      }
+
+      const CraftingPost = {
+        post: Posts[1],
+        techTreeUrl: '',
+        equipements: [],
+        structures: []
+      }
+
+      const CraftingNode =
+        Array.from(CraftingPost.post.querySelectorAll('.content > :not(br):not(span)'))
+
+
+      //The states of the crawl
+      let equipementState = CrawlEquipement.IMAGE
+      let structureState = CrawlStructure.IMAGE
+
+      CraftingPost.techTreeUrl = CraftingNode[0].src
+
+
+      /**
+       * The equipements
+       **/
+      const equipementContent = Array.from(CraftingNode[1].querySelector('.quotecontent > div').childNodes)
+      let equipement = {
+        imageUrl: undefined,
+        desc: undefined,
+        bonus: undefined,
+        ability: undefined,
+      }
+
+      // Crawl each eauipements
+      for(let ii of equipementContent) {
+        if(ii.nodeName === 'IMG') {
+          //If we finished crawl an equipement
+          if(equipement.imageUrl !== undefined) {
+            CraftingPost.equipements.push({})
+
+            //Here make a copy of the object in the table instead of copying the reference
+            Object.assign(CraftingPost.equipements[CraftingPost.equipements.length - 1], equipement)
+
+            equipement = {
+              imageUrl: undefined,
+              desc: undefined,
+              bonus: undefined,
+              ability: undefined,
+            }
+          }
+
+          equipementStatus = CrawlEquipement.IMAGE
+          equipement.imageUrl = ii.src
+          equipementStatus ++
+
+        } else if(ii.nodeName === '#text') {
+          switch(equipementStatus) {
+            case CrawlEquipement.DESCRIPTION:
+              equipement.desc = ii.textContent
+              equipementStatus ++
+              break;
+            case CrawlEquipement.BONUS:
+              equipement.bonus = ii.textContent
+              equipementStatus ++
+              break;
+            case CrawlEquipement.ABILITY:
+              equipement.ability = ii.textContent
+              equipementStatus ++;
+              break;
+            default:
+              break;
+          }
+        }
+      }
+
+      //Redo for the last one
+      if(equipement.imageUrl !== undefined) {
+        CraftingPost.equipements.push({})
+
+        //Here make a copy of the object in the table instead of copying the reference
+        Object.assign(CraftingPost.equipements[CraftingPost.equipements.length - 1], equipement)
+      }
+
+
+      /**
+       * The structures
+       **/
+      const structureContent = Array.from(CraftingNode[2].querySelector('.quotecontent > div').childNodes)
+      let structure = {
+        imageUrl: undefined,
+        health: undefined,
+        desc: undefined,
+      }
+
+      // Crawl each eauipements
+      for(let ii of structureContent) {
+        if(ii.nodeName === 'IMG') {
+          //If we finished crawl an structure
+          if(structure.imageUrl !== undefined) {
+            CraftingPost.structures.push({})
+
+            //Here make a copy of the object in the table instead of copying the reference
+            Object.assign(CraftingPost.structures[CraftingPost.structures.length - 1], structure)
+
+
+            structure = {
+              imageUrl: undefined,
+              health: undefined,
+              desc: undefined,
+            }
+          }
+
+          structureStatus = CrawlStructure.IMAGE
+          structure.imageUrl = ii.src
+          structureStatus ++
+
+        } else if(ii.nodeName === '#text') {
+          switch(structureStatus) {
+            case CrawlStructure.HEALTH:
+              if(ii.textContent.match(/^\?+$/)) {
+                structure.desc = ii.textContent
+              } else  {
+                structure.health = ii.textContent
+              }
+              structureStatus ++
+              break;
+            case CrawlEquipement.DESCRIPTION:
+              structure.desc = ii.textContent
+              structureStatus ++
+              break;
+            default:
+              break;
+          }
+        }
+      }
+
+      //Redo for the last one
+      if(structure.imageUrl !== undefined) {
+        CraftingPost.structures.push({})
+
+        //Here make a copy of the object in the table instead of copying the reference
+        Object.assign(CraftingPost.structures[CraftingPost.structures.length - 1], structure)
+
+
+      }
+
+      StatusPost.Crafting = CraftingPost
 
       const MagicPost = Posts[2];
       StatusPost.Magic = Array.from(MagicPost.getElementsByClassName("content")[0].childNodes).find(elem => elem.nodeType === Node.TEXT_NODE).data
@@ -298,8 +480,11 @@ function refresh() {
       return JSON.stringify(StatusPost)
     })
     .run((error, result) => {
+
       if(error) console.error(error)
       result = JSON.parse(result);
+
+      result.Crafting.structures.map(structureTechParser)
       result.Survivors = survivorParser(result.Survivors)
       result.LooseItems = looseParser(result.LooseItems)
       result.Structures = structureParser(result.Structures)
