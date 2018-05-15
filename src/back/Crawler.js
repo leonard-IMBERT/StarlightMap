@@ -85,10 +85,9 @@ function survivorParser(data) {
   const persoMatch = data.trim().split(/\n ?\n/)
 
   for(let inhabitant of persoMatch) {
-    
+
     const details = inhabitant.split(/\n/)
-    //TODO: clean temporary fix
-    if(!(details.length < 2)) {
+    if(details.length > 3) {
       if(
         details[1].match(PosRegex) ||
         details[1].match(HealthRegex) ||
@@ -123,6 +122,19 @@ function survivorParser(data) {
         items[1].split(/, */),
         conditions[1].split(/, */),
         profession ? profession[1].split(/, */) : [""],
+      ))
+    } else if (details.length === 3) {
+      // Dead
+      Inhabitants.push(new Inhabitant(
+        details[0],
+        details[1],
+        0,
+        0,
+        0,
+        0,
+        [],
+        details[2],
+        []
       ))
     }
   }
