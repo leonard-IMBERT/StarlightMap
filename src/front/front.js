@@ -107,12 +107,12 @@ function getSurvivors(x, y) {
         Items: `(${numItems}) ` + inhab.items.toString().replace(/,/g,', ')
       }
 
-       // Pretifiying the condition and profession
-      if (!inhab.condition.includes("")) {
-        survivor.Conditions = inhab.condition.toString().replace(/,/g,', ')
+       // Pretifiying the conditions and jobs
+      if (!inhab.conditions.includes("")) {
+        survivor.Conditions = inhab.conditions.toString().replace(/,/g,', ')
       }
-      if (!inhab.profession.includes("")) {
-        survivor.Profession = inhab.profession.toString().replace(/,/g, ', ')
+      if (!inhab.jobs.includes("")) {
+        survivor.Jobs = inhab.jobs.toString().replace(/,/g, ', ')
       }
 
       // Fill the card

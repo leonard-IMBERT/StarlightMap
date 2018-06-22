@@ -28,15 +28,15 @@ class Position {
 }
 
 class Inhabitant {
-  constructor(name, des, posX, posY, currentHealth, maxHealth, items, conditions, profession) {
+  constructor(name, des, posX, posY, currentHealth, maxHealth, items, conditions, jobs) {
     this.Name = name;
     this.Description = des
     this.Position = new Position(posX, posY);
     this.Health = currentHealth;
     this.MaxHealth = maxHealth;
     this.items = items;
-    this.condition = conditions;
-    this.profession = profession;
+    this.conditions = conditions;
+    this.jobs = jobs;
   }
 
   valueOf() {
@@ -47,8 +47,8 @@ class Inhabitant {
       Health: this.Health,
       MaxHealth: this.MaxHealth,
       items: this.items,
-      condition: this.condition,
-      profession: this.profession,
+      conditions: this.conditions,
+      jobs: this.jobs,
     }
   }
 }
@@ -62,8 +62,8 @@ const InhabitantSchema = new Schema({
   Health: 'number',
   MaxHealth: 'number',
   items: ['string'],
-  condition: ['string'],
-  profession: ['string'],
+  conditions: ['string'],
+  jobs: ['string'],
 })
 
 const EquipementSchema = new Schema({
@@ -151,7 +151,7 @@ function survivorParser(data) {
      * 6: HealthMax
      * 7: Items
      * 8: Conditions
-     * 9: Profession
+     * 9: Jobs
      */
 
       Inhabitants.push(new Inhabitant(
@@ -581,8 +581,8 @@ function getInfoByCoord(x, y) {
 function getCounts() {
   return new Promise((resolve, reject) => {
     StatusMongoose.find({}, ['Survivors.items',
-                             'Survivors.condition',
-                             'Survivors.profession'], {
+                             'Survivors.conditions',
+                             'Survivors.jobs'], {
       skip:0,
       limit: 1,
       sort: {
@@ -593,8 +593,8 @@ function getCounts() {
       const count = stat[0].Survivors
         .reduce((acc, cur) => {
           const counting = cur.items
-                   .concat(cur.condition)
-                   .concat(cur.profession)
+                   .concat(cur.conditions)
+                   .concat(cur.jobs)
           for (const item of counting) {
             if (!item) continue
             if (item in acc) acc[item]++
@@ -621,8 +621,8 @@ function getDetailsAboutStat(stat) {
       const survivors = d[0].Survivors;
       for(const survivor of survivors) {
         const search = survivor.items
-               .concat(survivor.condition)
-               .concat(survivor.profession)
+               .concat(survivor.conditions)
+               .concat(survivor.jobs)
         if(search.find(e => e === stat)) {
           const count = search
             .filter(elem => elem === stat)
