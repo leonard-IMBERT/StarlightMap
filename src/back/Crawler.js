@@ -168,23 +168,29 @@ function survivorParser(data) {
   return Inhabitants
 }
 
+function parseMultiItems(line) {
+  const ItemsRegex = /\d+ [\w *]+,?/g;
+  const ItemRegex = /(\d+) ([\w *]+)/;
+
+  const items = [];
+  for (const item of line.match(ItemsRegex)) {
+    const itemMatch = item.match(ItemRegex);
+    for (let count = 0; count < Number(itemMatch[1]); count++) {
+      items.push(itemMatch[2]);
+    }
+  }
+  return items;
+}
+
 function looseParser(data) {
   const LooseItems = new Array();
   const PosRegex = /(\d+), *(\d+) *:/;
-  const ItemsRegex = /\d+ [\w *]+,?/g;
-  const ItemRegex = /(\d+) ([\w *]+)/;
 
   const lines = data.split(/\n/);
   for (const line of lines) {
     try {
       const position = line.match(PosRegex);
-      const items = [];
-      for (const item of line.match(ItemsRegex)) {
-        const itemMatch = item.match(ItemRegex);
-        for (let count = 0; count < Number(itemMatch[1]); count++) {
-          items.push(itemMatch[2]);
-        }
-      }
+      const items = parseMultiItems(line);
       LooseItems.push(new Inhabitant (
         "Loose Items",
         "",
@@ -207,6 +213,7 @@ function structureParser(data) {
   const Structures = new Array();
   const PosRegex = /(\d+), *(\d+) *:/;
   const HealthRegex = /(\d+)\/(\d+) health/;
+  const StorageParser = /storing (.*)$/;
 
   const lines = data.split(/\n/);
   for (const line of lines) {
@@ -214,6 +221,7 @@ function structureParser(data) {
       const position = line.match(PosRegex);
       const name = line.split(/:/)[1];
       const health = line.match(HealthRegex);
+      const storage = line.match(StorageParser);
       Structures.push(new Inhabitant (
         name,
         "Structure",
@@ -221,7 +229,7 @@ function structureParser(data) {
         position ? position[2] : 0,
         health ? health[1] : 0,
         health ? health[2] : 0,
-        [""],
+        storage ? parseMultiItems(storage[1]) : [""],
         ["Structure"],
         [""]
       ));

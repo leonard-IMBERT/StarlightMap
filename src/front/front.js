@@ -97,13 +97,14 @@ function getSurvivors(x, y) {
         card = cardObject.div
       }
 
+      const numItems = '' === inhab.items.toString() ? 0 : inhab.items.length;
       // Creating the survivor for data-card
       const survivor = {
         Name: inhab.Name,
         Description: inhab.Description,
         Position: `${inhab.Position.x},${inhab.Position.y}`,
         Health: `${inhab.Health}/${inhab.MaxHealth}`,
-        Items: inhab.items.toString().replace(/,/g,', ')
+        Items: `(${numItems}) ` + inhab.items.toString().replace(/,/g,', ')
       }
 
        // Pretifiying the condition and profession
