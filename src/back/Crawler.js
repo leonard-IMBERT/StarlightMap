@@ -107,6 +107,8 @@ function survivorParser(data) {
   const PosRegex = /Position: *(\d+), *(\d+)/
   const HealthRegex = /Health: *(\d+)\/(\d+)/
   const ProfessionRegex = /Profession: *(([\w?]*[, ]?)*)/
+  const ClassRegex = /Class: *(([\w?]* ?)*)/
+  const DescriptionRegex = /\d, ?(.+)$/
 
   const Inhabitants = new Array();
   const persoMatch = data.trim().split(/\n ?\n/)
@@ -126,6 +128,19 @@ function survivorParser(data) {
       const items = inhabitant.match(ItemsRegex)
       const conditions = inhabitant.match(ConditionsRegex)
       const profession = inhabitant.match(ProfessionRegex)
+      const survivorClass = inhabitant.match(ClassRegex)
+      const curProfClass = details[1].match(DescriptionRegex)
+
+      const jobs = [];
+      if (profession) {
+        profession[1].split(/ +/).forEach(job => jobs.push(job));
+      }
+      if (survivorClass) {
+        survivorClass[1].split(/ +/).forEach(job => jobs.push(job));
+      }
+      if (curProfClass) {
+        curProfClass[1].split(/[, ]+/).forEach(job => jobs.push(job));
+      }
 
     /*
      * 1: Name
@@ -148,7 +163,7 @@ function survivorParser(data) {
         health ? health[2] : 0,
         items ? items[1].split(/, */) : [],
         conditions ? conditions[1].split(/, */) : [],
-        profession ? profession[1].split(/ +/) : [""],
+        jobs,
       ))
     } else if (details.length === 3) {
       // Dead
