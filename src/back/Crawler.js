@@ -94,7 +94,10 @@ const StatusMongoose = mongoose.model('Status', {
 function structureTechParser(data) {
   const HealthRegex = /Health: *(\d)+/
 
-  if(data.health) { data.health = data.health.match(HealthRegex)[1] }
+  if(data.health) {
+    const parsed = data.health.match(HealthRegex)
+    data.health = parsed ? parsed[1] : 0
+  }
   return data
 }
 
@@ -145,19 +148,19 @@ function survivorParser(data) {
         health ? health[2] : 0,
         items ? items[1].split(/, */) : [],
         conditions ? conditions[1].split(/, */) : [],
-        profession ? profession[1].split(/, */) : [""],
+        profession ? profession[1].split(/ +/) : [""],
       ))
     } else if (details.length === 3) {
       // Dead
       Inhabitants.push(new Inhabitant(
         details[0],
-        details[1],
-        0,
-        0,
+        details[1] + ". " + details[2],
+        -1,
+        -1,
         0,
         0,
         [],
-        details[2],
+        ["Dead"],
         []
       ))
     }
