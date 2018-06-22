@@ -28,15 +28,15 @@ class Position {
 }
 
 class Inhabitant {
-  constructor(name, des, posX, posY, currentHealth, maxHealth, items, conditions, profession) {
+  constructor(name, des, posX, posY, currentHealth, maxHealth, items, conditions, jobs) {
     this.Name = name;
     this.Description = des
     this.Position = new Position(posX, posY);
     this.Health = currentHealth;
     this.MaxHealth = maxHealth;
     this.items = items;
-    this.condition = conditions;
-    this.profession = profession;
+    this.conditions = conditions;
+    this.jobs = jobs;
   }
 
   valueOf() {
@@ -47,8 +47,8 @@ class Inhabitant {
       Health: this.Health,
       MaxHealth: this.MaxHealth,
       items: this.items,
-      condition: this.condition,
-      profession: this.profession,
+      conditions: this.conditions,
+      jobs: this.jobs,
     }
   }
 }
@@ -62,8 +62,8 @@ const InhabitantSchema = new Schema({
   Health: 'number',
   MaxHealth: 'number',
   items: ['string'],
-  condition: ['string'],
-  profession: ['string'],
+  conditions: ['string'],
+  jobs: ['string'],
 })
 
 const EquipementSchema = new Schema({
@@ -94,7 +94,10 @@ const StatusMongoose = mongoose.model('Status', {
 function structureTechParser(data) {
   const HealthRegex = /Health: *(\d)+/
 
-  if(data.health) { data.health = data.health.match(HealthRegex)[1] }
+  if(data.health) {
+    const parsed = data.health.match(HealthRegex)
+    data.health = parsed ? parsed[1] : 0
+  }
   return data
 }
 
@@ -104,6 +107,8 @@ function survivorParser(data) {
   const PosRegex = /Position: *(\d+), *(\d+)/
   const HealthRegex = /Health: *(\d+)\/(\d+)/
   const ProfessionRegex = /Profession: *(([\w?]*[, ]?)*)/
+  const ClassRegex = /Class: *(([\w?]* ?)*)/
+  const DescriptionRegex = /\d, ?(.+)$/
 
   const Inhabitants = new Array();
   const persoMatch = data.trim().split(/\n ?\n/)
@@ -123,6 +128,19 @@ function survivorParser(data) {
       const items = inhabitant.match(ItemsRegex)
       const conditions = inhabitant.match(ConditionsRegex)
       const profession = inhabitant.match(ProfessionRegex)
+      const survivorClass = inhabitant.match(ClassRegex)
+      const curProfClass = details[1].match(DescriptionRegex)
+
+      const jobs = [];
+      if (profession) {
+        profession[1].split(/ +/).forEach(job => jobs.push(job));
+      }
+      if (survivorClass) {
+        survivorClass[1].split(/ +/).forEach(job => jobs.push(job));
+      }
+      if (curProfClass) {
+        curProfClass[1].split(/[, ]+/).forEach(job => jobs.push(job));
+      }
 
     /*
      * 1: Name
@@ -133,31 +151,31 @@ function survivorParser(data) {
      * 6: HealthMax
      * 7: Items
      * 8: Conditions
-     * 9: Profession
+     * 9: Jobs
      */
 
       Inhabitants.push(new Inhabitant(
         details[0],
         details[1],
-        position[1],
-        position[2],
-        health[1],
-        health[2],
-        items[1].split(/, */),
-        conditions[1].split(/, */),
-        profession ? profession[1].split(/, */) : [""],
+        position ? position[1] : 0,
+        position ? position[2] : 0,
+        health ? health[1] : 0,
+        health ? health[2] : 0,
+        items ? items[1].split(/, */) : [],
+        conditions ? conditions[1].split(/, */) : [],
+        jobs,
       ))
     } else if (details.length === 3) {
       // Dead
       Inhabitants.push(new Inhabitant(
         details[0],
-        details[1],
-        0,
-        0,
+        details[1] + ". " + details[2],
+        -1,
+        -1,
         0,
         0,
         [],
-        details[2],
+        ["Dead"],
         []
       ))
     }
@@ -165,28 +183,34 @@ function survivorParser(data) {
   return Inhabitants
 }
 
+function parseMultiItems(line) {
+  const ItemsRegex = /\d+ [\w *]+,?/g;
+  const ItemRegex = /(\d+) ([\w *]+)/;
+
+  const items = [];
+  for (const item of line.match(ItemsRegex)) {
+    const itemMatch = item.match(ItemRegex);
+    for (let count = 0; count < Number(itemMatch[1]); count++) {
+      items.push(itemMatch[2]);
+    }
+  }
+  return items;
+}
+
 function looseParser(data) {
   const LooseItems = new Array();
   const PosRegex = /(\d+), *(\d+) *:/;
-  const ItemsRegex = /\d+ [\w *]+,?/g;
-  const ItemRegex = /(\d+) ([\w *]+)/;
 
   const lines = data.split(/\n/);
   for (const line of lines) {
     try {
       const position = line.match(PosRegex);
-      const items = [];
-      for (const item of line.match(ItemsRegex)) {
-        const itemMatch = item.match(ItemRegex);
-        for (let count = 0; count < Number(itemMatch[1]); count++) {
-          items.push(itemMatch[2]);
-        }
-      }
+      const items = parseMultiItems(line);
       LooseItems.push(new Inhabitant (
         "Loose Items",
         "",
-        position[1],
-        position[2],
+        position ? position[1] : 0,
+        position ? position[2] : 0,
         0, 0, // Health, not valid
         items,
         ["Loose"],
@@ -204,6 +228,7 @@ function structureParser(data) {
   const Structures = new Array();
   const PosRegex = /(\d+), *(\d+) *:/;
   const HealthRegex = /(\d+)\/(\d+) health/;
+  const StorageParser = /storing (.*)$/;
 
   const lines = data.split(/\n/);
   for (const line of lines) {
@@ -211,14 +236,15 @@ function structureParser(data) {
       const position = line.match(PosRegex);
       const name = line.split(/:/)[1];
       const health = line.match(HealthRegex);
+      const storage = line.match(StorageParser);
       Structures.push(new Inhabitant (
         name,
         "Structure",
-        position[1],
-        position[2],
+        position ? position[1] : 0,
+        position ? position[2] : 0,
         health ? health[1] : 0,
         health ? health[2] : 0,
-        [""],
+        storage ? parseMultiItems(storage[1]) : [""],
         ["Structure"],
         [""]
       ));
@@ -555,8 +581,8 @@ function getInfoByCoord(x, y) {
 function getCounts() {
   return new Promise((resolve, reject) => {
     StatusMongoose.find({}, ['Survivors.items',
-                             'Survivors.condition',
-                             'Survivors.profession'], {
+                             'Survivors.conditions',
+                             'Survivors.jobs'], {
       skip:0,
       limit: 1,
       sort: {
@@ -567,8 +593,8 @@ function getCounts() {
       const count = stat[0].Survivors
         .reduce((acc, cur) => {
           const counting = cur.items
-                   .concat(cur.condition)
-                   .concat(cur.profession)
+                   .concat(cur.conditions)
+                   .concat(cur.jobs)
           for (const item of counting) {
             if (!item) continue
             if (item in acc) acc[item]++
@@ -595,8 +621,8 @@ function getDetailsAboutStat(stat) {
       const survivors = d[0].Survivors;
       for(const survivor of survivors) {
         const search = survivor.items
-               .concat(survivor.condition)
-               .concat(survivor.profession)
+               .concat(survivor.conditions)
+               .concat(survivor.jobs)
         if(search.find(e => e === stat)) {
           const count = search
             .filter(elem => elem === stat)

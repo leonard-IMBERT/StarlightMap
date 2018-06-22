@@ -97,21 +97,22 @@ function getSurvivors(x, y) {
         card = cardObject.div
       }
 
+      const numItems = '' === inhab.items.toString() ? 0 : inhab.items.length;
       // Creating the survivor for data-card
       const survivor = {
         Name: inhab.Name,
         Description: inhab.Description,
         Position: `${inhab.Position.x},${inhab.Position.y}`,
         Health: `${inhab.Health}/${inhab.MaxHealth}`,
-        Items: inhab.items.toString().replace(/,/g,', ')
+        Items: `(${numItems}) ` + inhab.items.toString().replace(/,/g,', ')
       }
 
-       // Pretifiying the condition and profession
-      if (!inhab.condition.includes("")) {
-        survivor.Conditions = inhab.condition.toString().replace(/,/g,', ')
+       // Pretifiying the conditions and jobs
+      if (!inhab.conditions.includes("")) {
+        survivor.Conditions = inhab.conditions.toString().replace(/,/g,', ')
       }
-      if (!inhab.profession.includes("")) {
-        survivor.Profession = inhab.profession.toString().replace(/,/g, ', ')
+      if (!inhab.jobs.includes("")) {
+        survivor.Jobs = inhab.jobs.toString().replace(/,/g, ', ')
       }
 
       // Fill the card
@@ -267,7 +268,7 @@ blankmap.load('/blankmap', 962, 924, 0, 0).then(_ => {
 
 fetch(Requests.StatsRequest()).then(d => d.json()).then(d => {
 
-  for (const resource in d) {
+  for (const resource of Object.keys(d).sort()) {
     const rescount = table.insertRow()
     rescount.classList.add('resourceCounts')
     const name = rescount.insertCell()
