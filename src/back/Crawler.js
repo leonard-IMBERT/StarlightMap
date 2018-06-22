@@ -139,12 +139,12 @@ function survivorParser(data) {
       Inhabitants.push(new Inhabitant(
         details[0],
         details[1],
-        position[1],
-        position[2],
-        health[1],
-        health[2],
-        items[1].split(/, */),
-        conditions[1].split(/, */),
+        position ? position[1] : 0,
+        position ? position[2] : 0,
+        health ? health[1] : 0,
+        health ? health[2] : 0,
+        items ? items[1].split(/, */) : [],
+        conditions ? conditions[1].split(/, */) : [],
         profession ? profession[1].split(/, */) : [""],
       ))
     } else if (details.length === 3) {
@@ -185,8 +185,8 @@ function looseParser(data) {
       LooseItems.push(new Inhabitant (
         "Loose Items",
         "",
-        position[1],
-        position[2],
+        position ? position[1] : 0,
+        position ? position[2] : 0,
         0, 0, // Health, not valid
         items,
         ["Loose"],
@@ -214,8 +214,8 @@ function structureParser(data) {
       Structures.push(new Inhabitant (
         name,
         "Structure",
-        position[1],
-        position[2],
+        position ? position[1] : 0,
+        position ? position[2] : 0,
         health ? health[1] : 0,
         health ? health[2] : 0,
         [""],
