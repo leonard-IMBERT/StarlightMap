@@ -268,7 +268,7 @@ blankmap.load('/blankmap', 962, 924, 0, 0).then(_ => {
 
 fetch(Requests.StatsRequest()).then(d => d.json()).then(d => {
 
-  for (const resource in d) {
+  for (const resource of Object.keys(d).sort()) {
     const rescount = table.insertRow()
     rescount.classList.add('resourceCounts')
     const name = rescount.insertCell()
