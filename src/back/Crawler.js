@@ -187,8 +187,10 @@ function parseMultiItems(line) {
   const ItemsRegex = /\d+ [\w *]+,?/g;
   const ItemRegex = /(\d+) ([\w *]+)/;
 
+  const itemsMatch = line.match(ItemsRegex);
+  if (!itemsMatch) return [];
   const items = [];
-  for (const item of line.match(ItemsRegex)) {
+  for (const item of itemsMatch) {
     const itemMatch = item.match(ItemRegex);
     for (let count = 0; count < Number(itemMatch[1]); count++) {
       items.push(itemMatch[2]);
@@ -228,7 +230,7 @@ function structureParser(data) {
   const Structures = new Array();
   const PosRegex = /(\d+), *(\d+) *:/;
   const HealthRegex = /(\d+)\/(\d+) health/;
-  const StorageParser = /storing (.*)$/;
+  const StorageParser = /health(.*)$/;
 
   const lines = data.split(/\n/);
   for (const line of lines) {
