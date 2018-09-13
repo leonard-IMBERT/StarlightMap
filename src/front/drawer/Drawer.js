@@ -1,7 +1,15 @@
 import Images from './Images'
 import Zoomer from './Zoomer'
 
+/**
+ * Class Point representing a point in space
+ */
 export class Point {
+  /**
+   * The basic constructor of a point
+   * @param {number} x The x position
+   * @param {number} y The y position
+   */
   constructor(x, y) {
     this.x = x
     this.y = y
@@ -9,33 +17,59 @@ export class Point {
 }
 
 /**
- * Drawer object used to facilite the drawing on canvas part
- * Take an HtmlElement of type canvas as parameter
+ * Drawer object used to ease the drawing on canvas
  **/
 export default class Drawer{
+  /**
+   * The basic constructor for the drawer
+   * @param {HTMLCanvasElement} canvas The canvas on which the drawer will draw
+   */
   constructor(canvas) {
-    if(canvas.tagName !== 'CANVAS') throw new Error("The giving div is Either not a canvas or not an Html element");
+    if(!(canvas instanceof HTMLCanvasElement)) throw new Error("The giving div is Either not a canvas or not an Html element");
+    /**
+     * The canvas on which the drawer will draw
+     */
     this.canvas = canvas
+
+    /**
+     * The context of the canvas
+     */
     this.ctx = canvas.getContext('2d')
   }
 
+  /**
+   * Set the size of the canvas
+   * @param {number} x The width of the canvas
+   * @param {number} y The height of the canvas
+   */
   setSize(x, y) {
     this.canvas.height = y
     this.canvas.width = x
   }
 
   /**
-   * Used to draw a rectangle (pretty obvious)
-   **/
+   * Draw a rectangle on the canvas
+   * @param {number} posX The x postion of the top left corner 
+   * @param {number} posY The y position of the top left corner
+   * @param {number} height The height of the rectangle
+   * @param {number} width The width of the rectangle
+   * @param {string} color The color of the rectangle following the css standard for color
+   */
   drawRectangle(posX, posY, height, width, color) {
     if(color) this.ctx.fillStyle = color
     this.ctx.fillRect(posX, posY, height, width)
   }
 
   /**
-   * Draw a text in a colored box
-   * the posX and posY are the position of the text
-   * fontSize is in px
+   * Draw a text in a box
+   * The box will automaticaly resize to fit the text
+   * @param {number} posX The x position of the top left corner of the box
+   * @param {number} posY The y position of the top left corner of the box
+   * @param {string} text The text to draw
+   * @param {string} textColor The color of the text
+   * @param {string} boxColor The color of the box
+   * @param {number} [fontSize=12] The font size (in px)
+   * @param {string} [fontStyle="monospace"] The font of the text
    */
   drawTextBoxed(posX, posY, text, textColor, boxColor, fontSize=12, fontStyle="monospace") {
     this.ctx.font = `${fontSize}px ${fontStyle}`
@@ -46,13 +80,24 @@ export default class Drawer{
   }
 
   /**
-   * Used to draw a text (pretty obvious)
-   **/
+   * Draw some text on the canvas
+   * @param {number} posX The x position of the text 
+   * @param {number} posY The y position of the text
+   * @param {string} text The text to draw 
+   * @param {string} color The color of the text following the css standard for color name
+   */
   drawText(posX, posY, text, color) {
     if(color) this.ctx.fillStyle = color
     this.ctx.fillText(text, posX, posY)
   }
 
+  /**
+   * Draw an image with a specific scale
+   * @param {number} posX The x position of the image
+   * @param {number} posY The y position of the image
+   * @param {number} scale The scale of the image
+   * @param {Images} image The image to draw
+   */
   drawImageScale(posX, posY, scale, image) {
     this.ctx.drawImage(
       image.data,
@@ -68,6 +113,12 @@ export default class Drawer{
   }
 
 
+  /**
+   * Return the position of the i th corner of the hexagon
+   * @param {Point} center The center of the hexagon
+   * @param {number} size The size of the hexagon
+   * @param {number} i The index of the hexagon's corner
+   */
   HexCorner(center, size, i) {
     const angle_deg = 60 * i + 30
     const angle_rad = Math.PI / 180 * angle_deg
@@ -75,22 +126,36 @@ export default class Drawer{
       center.y + size * Math.sin(angle_rad))
   }
 
+  /**
+   * Draw an empty hexagon
+   * @param {number} posx The x position of the hexagon
+   * @param {number} posy The y position of the hexagon
+   * @param {number} size The size of the hexagon
+   * @param {string} color The color of the hexagon following the css standard for color
+   */
   drawHexagon(posx, posy, size, color) {
     const center = new Point(posx, posy)
     this.ctx.beginPath()
     this.ctx.strokeStyle = color
-    let point = this.HexCorner(center, size, 0)
-    this.ctx.moveTo(point.x, point.y)
 
-    for(let ii of [1, 2, 3, 4, 5, 0]) {
-      point = this.HexCorner(center, size, ii)
-      this.ctx.lineTo(point.x, point.y);
-    }
+    const cycle = [0,1,2,3,4,5,0]
+
+    cycle.forEach(number => {
+      const point = this.HexCorner(center, size, number)
+      this.ctx.lineTo(point.x, point.y)
+    })
 
     this.ctx.stroke()
-
   }
 
+  /**
+   * Draw an image on the canvas
+   * @param {number} posX The x position of the image
+   * @param {number} posY The y position of the image
+   * @param {number} width The width of the image
+   * @param {number} height The height of the image
+   * @param {Images} image The image to draw
+   */
   drawImage(posX, posY, width, height, image) {
     this.ctx.drawImage(
       image.data,
@@ -113,6 +178,10 @@ export default class Drawer{
     this.ctx.fillRect(0,0,1000,1000)
   }
 
+  /**
+   * Set the font of the canvas
+   * @param {string} font The font to use
+   */
   setFont(font) {
     this.ctx.font = font
   }

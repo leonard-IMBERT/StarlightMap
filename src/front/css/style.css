@@ -80,20 +80,22 @@ button:active, button.current, input:focus {
   border-spacing: 0px;
 }
 
-.resourceDetails {
-  width: 40%;
-}
-
 #resourceDetails {
-  width: 100%;
+  width: 40%;
+  border-spacing: 0px
 }
 
-.resourceCounts:hover {
-  background-color: #444444;
+td {
+  padding: 0px;
 }
 
-.location:hover {
+tr {
+  border-spacing: 0px;
+}
+
+tr:hover {
   background-color: #444444;
+  cursor: pointer;
 }
 
 caption {

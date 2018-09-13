@@ -2,9 +2,12 @@ import Drawer from './drawer/Drawer'
 import Images from './drawer/Images'
 import Zoomer from './drawer/Zoomer'
 import Hexagon from './hexagon/hexagon'
+import { Point } from './drawer/Drawer'
 
 import Requests from './init.js'
 import { Card } from './manipulator/manipulator';
+
+// Variables initialisation
 
 const MAP_WIDTH = 962
 const MAP_HEIGHT = 924
@@ -17,7 +20,7 @@ const markmap = new Images()
 const blankmap = new Images();
 let map = markmap;
 let clicked = false;
-let mousepos = {x: 0, y: 0}
+let mousepos = new Point(0, 0)
 
 const data = document.querySelector("div#data")
 const dataBlueprint = document.querySelector("div.data")
@@ -36,6 +39,9 @@ const table = document.querySelector('table#resources')
 
 const tableDetails = document.querySelector('table#resourceDetails')
 
+/**
+ * @type {Array<Hexagon>}
+ */
 const hexagons = []
 
 let cards = []
@@ -270,14 +276,12 @@ fetch(Requests.StatsRequest()).then(d => d.json()).then(d => {
 
   for (const resource of Object.keys(d).sort()) {
     const rescount = table.insertRow()
-    rescount.classList.add('resourceCounts')
+
     const name = rescount.insertCell()
-    name.classList.add('resourceCounts')
     name.appendChild(document.createTextNode(`${resource}`))
 
     const count = rescount.insertCell()
     count.appendChild(document.createTextNode(`${d[resource]}`))
-    count.classList.add('resourceCounts')
 
     rescount.addEventListener('click', e => {
       fetch(Requests.DetailsRequest(resource)).then(f => f.json()).then(details => {
@@ -293,14 +297,14 @@ fetch(Requests.StatsRequest()).then(d => d.json()).then(d => {
 
         for(const detail of details) {
           const row = tableDetails.insertRow()
+          row.addEventListener('click', e => getSurvivors(detail[1],detail[2]))
+
           const surName = row.insertCell()
           surName.appendChild(document.createTextNode(`${detail[0]}`))
 
           const surPos = row.insertCell()
-          surPos.appendChild(document.createTextNode(
-          `(${detail[1]},${detail[2]})`))
-          surPos.addEventListener('click',
-          e => getSurvivors(detail[1],detail[2]))
+          surPos.appendChild(document.createTextNode(`(${detail[1]},${detail[2]})`))
+
           surPos.classList.add('location')
 
           const surCount = row.insertCell()

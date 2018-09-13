@@ -26,7 +26,7 @@ export default class Hexagon {
   }
 
   draw(drawer, zoomer, offset, labelOffset) {
-    if (!labelOffset) labelOffset = 0
+    if (labelOffset == null) labelOffset = 0
     drawer.drawHexagon(
       (this.pos.x - offset.x) * zoomer.scale,
       (this.pos.y - offset.y) * zoomer.scale,
