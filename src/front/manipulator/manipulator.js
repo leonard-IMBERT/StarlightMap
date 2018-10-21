@@ -1,18 +1,18 @@
 export default class CardComponent extends HTMLElement {
+  static get ElementName() { return 'data-card'; }
 
-  static get ElementName() { return 'data-card' }
-  static set ElementName(data) { throw new Error('The ElementName property cannot be written') }
+  static set ElementName(data) { throw new Error('The ElementName property cannot be written'); }
 
   constructor() {
     super();
 
-    //Attach shadow DOM
-    this.shadow = this.attachShadow({mode: 'open'})
+    // Attach shadow DOM
+    this.shadow = this.attachShadow({ mode: 'open' });
 
-    this.ul = document.createElement('ul')
+    this.ul = document.createElement('ul');
 
 
-    const style = document.createElement('style')
+    const style = document.createElement('style');
 
 
     style.textContent = `
@@ -20,38 +20,41 @@ export default class CardComponent extends HTMLElement {
       color: inherit;
       list-style: none;
       font-family: inherit;
-    }`
+    }`;
 
-    this.shadow.append(style)
-    this.shadow.append(this.ul)
-
+    this.shadow.append(style);
+    this.shadow.append(this.ul);
   }
 
+  hide(value) {
+    if (value != null) this.hidden = value;
+    else this.hidden = !this.hidden;
+  }
 
   fill(data) {
-    this.data = data
-    for(let entry in data) {
-      const li = document.createElement('li')
-      li.classList.add(entry)
-      li.textContent = `${entry}: ${data[entry]}`
-      this.ul.append(li)
-    }
-    return this
+    this.data = data;
+    Object.keys(data).forEach((entry) => {
+      const li = document.createElement('li');
+      li.classList.add(entry);
+      li.textContent = `${entry}: ${data[entry]}`;
+      this.ul.append(li);
+    });
+    return this;
   }
 }
 
 export class Card {
+  static get ElementName() { return 'data-card'; }
 
-  static get ElementName() { return 'data-card' }
-  static set ElementName(data) { throw new Error('The ElementName property cannot be written') }
+  static set ElementName(data) { throw new Error('The ElementName property cannot be written'); }
 
   constructor() {
     this.div = document.createElement('data-card', { is: 'div' });
 
-    this.ul = document.createElement('ul')
+    this.ul = document.createElement('ul');
 
 
-    const style = document.createElement('style')
+    const style = document.createElement('style');
 
 
     style.textContent = `
@@ -59,21 +62,25 @@ export class Card {
       color: inherit;
       list-style: none;
       font-family: inherit;
-    }`
+    }`;
 
-    this.div.append(style)
-    this.div.append(this.ul)
+    this.div.append(style);
+    this.div.append(this.ul);
   }
 
+  hide(value) {
+    if (value != null) this.hidden = value;
+    else this.hidden = !this.hidden;
+  }
 
   fill(data) {
-    this.data = data
-    for(let entry in data) {
-      const li = document.createElement('li')
-      li.classList.add(entry)
-      li.textContent = `${entry}: ${data[entry]}`
-      this.ul.append(li)
-    }
-    return this
+    this.data = data;
+    Object.keys(data).forEach((entry) => {
+      const li = document.createElement('li');
+      li.classList.add(entry);
+      li.textContent = `${entry}: ${data[entry]}`;
+      this.ul.append(li);
+    });
+    return this;
   }
 }

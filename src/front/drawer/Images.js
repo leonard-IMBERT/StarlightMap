@@ -9,11 +9,11 @@ export default class Images {
     /**
      * Boolean telling if the load has finished
      */
-    this.loadFinished = false
+    this.loadFinished = false;
     /**
      * The data of the image
      */
-    this.data = null
+    this.data = null;
   }
 
   /**
@@ -29,28 +29,27 @@ export default class Images {
     /**
      * The width of the image
      */
-    this.width = width
+    this.width = width;
     /**
      * The height of the image
      */
-    this.height = height
+    this.height = height;
     /**
      * The x position of the image
      */
-    this.x = x
+    this.x = x;
     /**
      * The y position of the image
      */
-    this.y = y
+    this.y = y;
 
-    return new Promise((res, rej) => {
-      this.data = new Image()
-      this.data.src = src
+    return new Promise((res) => {
+      this.data = new Image();
+      this.data.src = src;
       this.data.onload = () => {
-        this.loadFinished = true
-        res()
-      }
-    })
+        this.loadFinished = true;
+        res();
+      };
+    });
   }
-
 }

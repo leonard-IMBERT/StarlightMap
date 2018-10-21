@@ -1,135 +1,67 @@
 const Nightmare = require('nightmare');
 const request = require('request');
 const fs = require('fs');
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 
-mongoose.connect('mongodb://localhost/Starlight');
+const Logger = require('./Logger');
+const Position = require('./classes/Position');
+const Inhabitant = require('./classes/Inhabitant');
+const { StatusMongoose } = require('./database/Schemes');
 
+const STATUS_PAGE_URL = 'http://willsaveworldforgold.com/forum/viewtopic.php?f=11&t=243';
+
+/**
+ * @returns {Nightmare} The Nightmare instance
+ */
 function getNightmare() {
   return Nightmare({
     gotoTimeout: 120000, // in ms
-    executionTimeout: 120000 // in ms
-  })
+    executionTimeout: 120000, // in ms
+  });
 }
-
-class Position {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-  }
-
-  valueOf() {
-    return {
-      x: this.x,
-      y: this.y
-    }
-  }
-}
-
-class Inhabitant {
-  constructor(name, des, posX, posY, currentHealth, maxHealth, items, conditions, jobs) {
-    this.Name = name;
-    this.Description = des
-    this.Position = new Position(posX, posY);
-    this.Health = currentHealth;
-    this.MaxHealth = maxHealth;
-    this.items = items;
-    this.conditions = conditions;
-    this.jobs = jobs;
-  }
-
-  valueOf() {
-    return {
-      Name: this.Name,
-      Description: this.Description,
-      Postision: this.Position.valueOf(),
-      Health: this.Health,
-      MaxHealth: this.MaxHealth,
-      items: this.items,
-      conditions: this.conditions,
-      jobs: this.jobs,
-    }
-  }
-}
-const PositionSchema = new Schema({ x: 'number', y: 'number' })
-const InhabitantSchema = new Schema({
-  Name: 'string',
-  Description: 'string',
-  Position: {
-    type: PositionSchema
-  },
-  Health: 'number',
-  MaxHealth: 'number',
-  items: ['string'],
-  conditions: ['string'],
-  jobs: ['string'],
-})
-
-const EquipementSchema = new Schema({
-  imageUrl: 'string',
-  desc: 'string',
-  bonus: 'string',
-  ability: 'string',
-})
-
-const StructureSchema = new Schema({
-  imageUrl: 'string',
-  desc: 'string',
-  health: 'number',
-})
-
-const StatusMongoose = mongoose.model('Status', {
-  date: Date,
-  Turn: String,
-  Survivors: [InhabitantSchema],
-  Craft: {
-    equipements: [EquipementSchema],
-    structures: [StructureSchema],
-  },
-  Magic: String
-})
-
 
 function structureTechParser(data) {
-  const HealthRegex = /Health: *(\d)+/
+  const HealthRegex = /Health: *(\d)+/;
 
-  if(data.health) {
-    const parsed = data.health.match(HealthRegex)
-    data.health = parsed ? parsed[1] : 0
+  const ret = data;
+  if (ret.health) {
+    const parsed = ret.health.match(HealthRegex);
+    ret.health = parsed ? parsed[1] : 0;
   }
-  return data
+  return ret;
 }
 
+/**
+ * Parse a String into a List of inhabitant
+ * @param {String} data The data to parse
+ */
 function survivorParser(data) {
-  const ConditionsRegex = /Conditions: *((?:\w*[, ]?)*)/
-  const ItemsRegex = /Items: *((?:\w*[, ]?)*)/
-  const PosRegex = /Position: *(\d+), *(\d+)/
-  const HealthRegex = /Health: *(\d+)\/(\d+)/
-  const ProfessionRegex = /Profession: *(([\w?]*[, ]?)*)/
-  const ClassRegex = /Class: *(([\w?]* ?)*)/
-  const DescriptionRegex = /\d, ?(.+)$/
+  Logger.debug(data);
+  const ConditionsRegex = /Conditions: *((?:\w*[, ]?)*)/;
+  const ItemsRegex = /Items: *((?:\w*[, ]?)*)/;
+  const PosRegex = /Position: *(\d+), *(\d+)/;
+  const HealthRegex = /Health: *(\d+)\/(\d+)/;
+  const ProfessionRegex = /Profession: *(([\w?]*[, ]?)*)/;
+  const ClassRegex = /Class: *(([\w?]* ?)*)/;
+  const DescriptionRegex = /\d, ?(.+)$/;
 
-  const Inhabitants = new Array();
-  const persoMatch = data.trim().split(/\n ?\n/)
+  const persoMatch = data.trim().split(/\n ?\n/);
 
-  for(let inhabitant of persoMatch) {
+  return persoMatch.map((inhabitant) => {
+    const details = inhabitant.split(/\n/);
+    if (details.length > 3) {
+      if (
+        details[1].match(PosRegex)
+        || details[1].match(HealthRegex)
+        || details[1].match(ItemsRegex)
+        || details[1].match(ConditionsRegex)) details[1] = '';
 
-    const details = inhabitant.split(/\n/)
-    if(details.length > 3) {
-      if(
-        details[1].match(PosRegex) ||
-        details[1].match(HealthRegex) ||
-        details[1].match(ItemsRegex) ||
-        details[1].match(ConditionsRegex)) details[1] = ""
-
-      const position = inhabitant.match(PosRegex)
-      const health = inhabitant.match(HealthRegex)
-      const items = inhabitant.match(ItemsRegex)
-      const conditions = inhabitant.match(ConditionsRegex)
-      const profession = inhabitant.match(ProfessionRegex)
-      const survivorClass = inhabitant.match(ClassRegex)
-      const curProfClass = details[1].match(DescriptionRegex)
+      const position = inhabitant.match(PosRegex);
+      const health = inhabitant.match(HealthRegex);
+      const items = inhabitant.match(ItemsRegex);
+      const conditions = inhabitant.match(ConditionsRegex);
+      const profession = inhabitant.match(ProfessionRegex);
+      const survivorClass = inhabitant.match(ClassRegex);
+      const curProfClass = details[1].match(DescriptionRegex);
 
       const jobs = [];
       if (profession) {
@@ -142,7 +74,7 @@ function survivorParser(data) {
         curProfClass[1].split(/[, ]+/).forEach(job => jobs.push(job));
       }
 
-    /*
+      /*
      * 1: Name
      * 2: Def
      * 3: posx
@@ -154,7 +86,7 @@ function survivorParser(data) {
      * 9: Jobs
      */
 
-      Inhabitants.push(new Inhabitant(
+      return new Inhabitant(
         details[0],
         details[1],
         position ? position[1] : 0,
@@ -164,489 +96,318 @@ function survivorParser(data) {
         items ? items[1].split(/, */) : [],
         conditions ? conditions[1].split(/, */) : [],
         jobs,
-      ))
-    } else if (details.length === 3) {
+      );
+    }
+    if (details.length === 3) {
       // Dead
-      Inhabitants.push(new Inhabitant(
+      return new Inhabitant(
         details[0],
-        details[1] + ". " + details[2],
+        `${details[1]}. ${details[2]}`,
         -1,
         -1,
         0,
         0,
         [],
-        ["Dead"],
-        []
-      ))
+        ['Dead'],
+        [],
+      );
     }
-  }
-  return Inhabitants
+    return undefined;
+  }).filter(inhab => inhab != null);
 }
 
+
+/**
+ * Parse a line with multiple items
+ * @param {String} line The line to parse
+ */
 function parseMultiItems(line) {
   const ItemsRegex = /\d+ [\w *]+,?/g;
   const ItemRegex = /(\d+) ([\w *]+)/;
 
   const itemsMatch = line.match(ItemsRegex);
   if (!itemsMatch) return [];
-  const items = [];
-  for (const item of itemsMatch) {
-    const itemMatch = item.match(ItemRegex);
-    for (let count = 0; count < Number(itemMatch[1]); count++) {
-      items.push(itemMatch[2]);
-    }
-  }
-  return items;
+  return itemsMatch.map((items) => {
+    const [, number, item] = items.match(ItemRegex);
+
+    return new Array(number).fill(item);
+  }).reduce((g1, g2) => g1.concat(g2));
 }
 
+/**
+ * Try to parse a String into a list of Loose items
+ * @param {String} data The data to parse
+ * TODO The parser actually parse the loose items into inhabitant, give them a proper class
+ */
 function looseParser(data) {
-  const LooseItems = new Array();
   const PosRegex = /(\d+), *(\d+) *:/;
 
   const lines = data.split(/\n/);
-  for (const line of lines) {
+  return lines.map((line) => {
     try {
       const position = line.match(PosRegex);
       const items = parseMultiItems(line);
-      LooseItems.push(new Inhabitant (
-        "Loose Items",
-        "",
+      return new Inhabitant(
+        'Loose Items',
+        '',
         position ? position[1] : 0,
         position ? position[2] : 0,
         0, 0, // Health, not valid
         items,
-        ["Loose"],
-        [""],
-      ));
+        ['Loose'],
+        [''],
+      );
     } catch (e) {
-      console.error(e);
-      console.error(line);
+      Logger.error(`Got this error: ${e} with the line ${line}`);
+      return undefined;
     }
-  }
-  return LooseItems;
+  }).filter(d => d != null);
 }
 
+/**
+ * Try to parse a String into a list of Structure
+ * @param {String} data The data to parse
+ * TODO The parse actually parse the structures into inhabitant, git them a proper class
+ */
 function structureParser(data) {
-  const Structures = new Array();
   const PosRegex = /(\d+), *(\d+) *:/;
   const HealthRegex = /(\d+)\/(\d+) health/;
   const StorageParser = /health(.*)$/;
 
   const lines = data.split(/\n/);
-  for (const line of lines) {
+
+  return lines.map((line) => {
     try {
       const position = line.match(PosRegex);
       const name = line.split(/:/)[1];
       const health = line.match(HealthRegex);
       const storage = line.match(StorageParser);
-      Structures.push(new Inhabitant (
+      return new Inhabitant(
         name,
-        "Structure",
+        'Structure',
         position ? position[1] : 0,
         position ? position[2] : 0,
         health ? health[1] : 0,
         health ? health[2] : 0,
-        storage ? parseMultiItems(storage[1]) : [""],
-        ["Structure"],
-        [""]
-      ));
+        storage ? parseMultiItems(storage[1]) : [''],
+        ['Structure'],
+        [''],
+      );
     } catch (e) {
-      console.error(e);
-      console.error(line);
+      Logger.error(`Got this error: ${e} with the line ${line}`);
+      return undefined;
     }
-  }
-  return Structures;
+  }).filter(d => d != null);
 }
 
 function refreshTurn(turn) {
-  console.info("Current turn update started: " + turn.designation);
+  Logger.info(`Current turn update started: ${turn.designation}`);
+
   const postid = turn.url.split('#')[1];
   return getNightmare()
     .goto(turn.url)
     .wait(5000)
-    .evaluate(function(id) {
-      const MapUrl = document.querySelector(`#${id} .content > img`).src
+    .evaluate((id) => {
+      const MapUrl = document.querySelector(`#${id} .content > img`).src;
       return JSON.stringify(MapUrl);
-    }, postid).run((error, result) => {
-      if(error) console.error(error);
-      result = JSON.parse(result);
-      request(result).pipe(fs.createWriteStream('save/map.png'));
-      console.info("Current turn update finished");
-    }).end();
+    }, postid)
+    .run((error, result) => {
+      if (error) {
+        Logger.error(`Got an error with getting the page: ${error}`);
+        return;
+      }
+      try {
+        const jsonResult = JSON.parse(result);
+        request(jsonResult).pipe(fs.createWriteStream('save/map.png'));
+      } catch (e) {
+        Logger.error(`Got an error when downloading the map: ${e}`);
+        return;
+      }
+      Logger.info('Current turn update finished');
+    })
+    .end();
 }
 
 function refresh() {
-  console.info("Update started")
+  Logger.info('Update started');
   return getNightmare()
-    .goto('http://willsaveworldforgold.com/forum/viewtopic.php?f=11&t=243')
-    .wait(5000)
-    .evaluate(function() {
+    .goto(STATUS_PAGE_URL)
+    .wait('#p43933')
+    .evaluate(() => {
+      // ==== Type declaration ====
 
-      const CrawlStatus = {
-        BEGINNING: 0,
-        TURN_LIST: 1,
-        STATUS_LIST: 2,
-        MAP_LIST: 3,
-        LOOSE_ITEMS: 4,
-        STRUCTURE: 5,
-      }
+      /**
+       * @typedef {Object} TurnLink
+       * @property {String} designation - The designation of the turn
+       * @property {String} url - The url to the turn post
+       */
 
-      const Posts = document.getElementsByClassName('post');
+      /**
+       * The equipement object
+       * @typedef {Object} Equipement
+       * @property {String} imageUrl - The url to the quipement image
+       * @property {String} desc - The description of the equipement
+       * @property {String} [bonus] - The possible bonus of the equipement
+       * @property {String} [ability] - The possible ability of the equipement,
+       */
+
+      /**
+       * The structure object
+       * @typedef {Object} Structure
+       * @property {String} imageUrl - The url to the structure image
+       * @property {String} [terrain] - The terrain (if precised) on which the structure must be
+       * @property {String} [health] - The maximum health of the structure
+       * @property {String} [benefit] - The benefit given by the structure
+       */
+
+      /**
+       * The object referencing all the possible crafts
+       * @typedef {Object} CraftingPost
+       * @property {Element} Post - The post where we can found the infos
+       * @property {String} TechTreeUrl - The url to the tech tree image
+       * @property {Equipement[]} equipements - An array containing all the possible equipements
+       * @property {String[]} structures - An array containing all the possible structures
+       */
+
+      /**
+       * TODO Find a good structure for the content part
+       * The object referencing all the informations about magic
+       * @typedef {Object} MagicPost
+       * @property {Element} Post - The post where we can found info about magic
+       * @property {String} imageUrl - The url the magic map
+       * @property {String} content - The content of the magic tech tree
+       */
+
+      /**
+       * The object referencing all the element needed to generate the status
+       * @typedef {Object} StatusPost
+       * @property {Element} Post - The post of the status
+       * @property {String} MapUrl - The url of the map image
+       * @property {Element} ActualStatus - The element containing the status
+       * @property {TurnLink[]} Turns - The list of the different turns
+       * @property {String} LooseItems - The loose items text
+       * @property {String} Survivors - The survivors text
+       * @property {String} Structures - The structures text
+       * @property {CraftingPost} Crafting - The crafting tech tree
+       * @property {MagicPost} Magic - The magic tech tree
+       */
+
+      /** @type {StatusPost} */
       const StatusPost = {
-        post: Posts[0],
-        MapUrl: '',
-        Crafting: '',
-        Magic: '',
-        Survivors: '',
         Turns: [],
-        LooseItems:'',
-        Structures: '',
-      }
+      };
 
-      StatusPost.content = StatusPost.post.getElementsByClassName('content')[0];
-      StatusPost.MapUrl = StatusPost.content.querySelector('img').src
-      const StatusNode =
-        Array.from(StatusPost.content.querySelectorAll('.content > :not(br)'))
+      /** @type {CraftingPost} */
+      const CraftingPost = {};
 
+      /** @type {MagicPost} */
+      const MagicPost = {};
 
-      let status = CrawlStatus.BEGINNING
+      [StatusPost.Post, CraftingPost.Post, MagicPost.Post] = document.getElementsByClassName('post');
 
-      for(let content of StatusNode) {
-        if(content.tagName === 'SPAN') status ++
-        else {
-          switch (status) {
-            case CrawlStatus.TURN_LIST:
-                for(let a of content.querySelectorAll('.quotecontent a')) {
-                  StatusPost.Turns.push({designation: a.text, url: a.href})
-                }
-              break;
-            case CrawlStatus.STATUS_LIST:
-                StatusPost.Survivors += (content.querySelector('.quotecontent > div').innerText + `\n\n`)
-              break;
-            case CrawlStatus.MAP_LIST:
-                StatusPost.MapUrl = content.src
-              break;
-            case CrawlStatus.LOOSE_ITEMS:
-                StatusPost.LooseItems = content.querySelector('.quotecontent > div').innerText
-                status ++
-              break;
-            case CrawlStatus.STRUCTURE:
-                StatusPost.Structures = content.querySelector('.quotecontent > div').innerText
-              break;
-            default:
-              break;
-          }
+      StatusPost.ActualStatus = StatusPost.Post.querySelector('.content');
+
+      const [TurnList, Humans, Halflings, Dwarves, Elves, MapImg, Looses, Structures] = StatusPost.ActualStatus.querySelectorAll('img, .quotecontent');
+
+      Array.from(TurnList.querySelectorAll('a')).forEach((turnLink) => {
+        if (turnLink instanceof HTMLAnchorElement) {
+          StatusPost.Turns.push({ designation: turnLink.text, url: turnLink.href });
         }
-      }
+      });
 
+      StatusPost.Survivors = `${Humans.firstElementChild.innerText} \n\n${Halflings.firstElementChild.innerText} \n\n${Dwarves.firstElementChild.innerText} \n\n${Elves.firstElementChild.innerText} \n\n`;
+      StatusPost.MapUrl = MapImg.src;
+      StatusPost.LooseItems = Looses.firstElementChild.innerText;
+      StatusPost.Structures = Structures.firstElementChild.innerText;
 
-      //TODO: Proprely parse the craft and the magic
+      // TODO: Proprely parse the craft and the magic
 
+      const CraftingNodes = Array.from(CraftingPost.Post.querySelectorAll('.content > :not(br):not(span)'));
 
-      // The differents informations about an equipement
-      const CrawlEquipement = {
-        IMAGE: 0,
-        DESCRIPTION: 1,
-        BONUS: 2,
-        ABILITY: 3,
-      }
-
-      // The differents informations about a structure
-      const CrawlStructure = {
-        IMAGE: 0,
-        HEALTH: 1,
-        DESCRIPTION: 2,
-      }
-
-      const CraftingPost = {
-        post: Posts[1],
-        techTreeUrl: '',
-        equipements: [],
-        structures: []
-      }
-
-      const CraftingNode =
-        Array.from(CraftingPost.post.querySelectorAll('.content > :not(br):not(span)'))
-
-
-      //The states of the crawl
-      let equipementState = CrawlEquipement.IMAGE
-      let structureState = CrawlStructure.IMAGE
-
-      CraftingPost.techTreeUrl = CraftingNode[0].src
-
+      CraftingPost.TechTreeUrl = CraftingNodes[0].src;
 
       /**
        * The equipements
-       **/
-      const equipementContent = Array.from(CraftingNode[1].querySelector('.quotecontent > div').childNodes)
-      let equipement = {
-        imageUrl: undefined,
-        desc: undefined,
-        bonus: undefined,
-        ability: undefined,
-      }
+       * */
+      const EquipementNodes = Array.from(CraftingNodes[1].querySelector('.quotecontent > div').childNodes)
+        .filter(x => !(x instanceof HTMLBRElement));
 
-      // Crawl each eauipements
-      for(let ii of equipementContent) {
-        if(ii.nodeName === 'IMG') {
-          //If we finished crawl an equipement
-          if(equipement.imageUrl !== undefined) {
-            CraftingPost.equipements.push({})
-
-            //Here make a copy of the object in the table instead of copying the reference
-            Object.assign(CraftingPost.equipements[CraftingPost.equipements.length - 1], equipement)
-
-            equipement = {
-              imageUrl: undefined,
-              desc: undefined,
-              bonus: undefined,
-              ability: undefined,
-            }
-          }
-
-          equipementStatus = CrawlEquipement.IMAGE
-          equipement.imageUrl = ii.src
-          equipementStatus ++
-
-        } else if(ii.nodeName === '#text') {
-          switch(equipementStatus) {
-            case CrawlEquipement.DESCRIPTION:
-              equipement.desc = ii.textContent
-              equipementStatus ++
-              break;
-            case CrawlEquipement.BONUS:
-              equipement.bonus = ii.textContent
-              equipementStatus ++
-              break;
-            case CrawlEquipement.ABILITY:
-              equipement.ability = ii.textContent
-              equipementStatus ++;
-              break;
-            default:
-              break;
-          }
-        }
-      }
-
-      //Redo for the last one
-      if(equipement.imageUrl !== undefined) {
-        CraftingPost.equipements.push({})
-
-        //Here make a copy of the object in the table instead of copying the reference
-        Object.assign(CraftingPost.equipements[CraftingPost.equipements.length - 1], equipement)
-      }
-
+      CraftingPost.equipements = EquipementNodes.reduce((acc, node) => {
+        if (node instanceof HTMLImageElement) return [[node.currentSrc], ...acc];
+        const [equip, ...next] = acc;
+        equip.push(node.textContent);
+        return [equip, ...next];
+      }, []).map((arr) => {
+        /** @type {Equipement} */
+        const ret = {};
+        [ret.imageUrl, ret.desc, ret.bonus, ret.ability] = arr;
+        return ret;
+      });
 
       /**
        * The structures
-       **/
-      const structureContent = Array.from(CraftingNode[2].querySelector('.quotecontent > div').childNodes)
-      let structure = {
-        imageUrl: undefined,
-        health: undefined,
-        desc: undefined,
-      }
-
-      // Crawl each eauipements
-      for(let ii of structureContent) {
-        if(ii.nodeName === 'IMG') {
-          //If we finished crawl an structure
-          if(structure.imageUrl !== undefined) {
-            CraftingPost.structures.push({})
-
-            //Here make a copy of the object in the table instead of copying the reference
-            Object.assign(CraftingPost.structures[CraftingPost.structures.length - 1], structure)
-
-
-            structure = {
-              imageUrl: undefined,
-              health: undefined,
-              desc: undefined,
-            }
-          }
-
-          structureStatus = CrawlStructure.IMAGE
-          structure.imageUrl = ii.src
-          structureStatus ++
-
-        } else if(ii.nodeName === '#text') {
-          switch(structureStatus) {
-            case CrawlStructure.HEALTH:
-              if(ii.textContent.match(/^\?+$/)) {
-                structure.desc = ii.textContent
-              } else  {
-                structure.health = ii.textContent
-              }
-              structureStatus ++
-              break;
-            case CrawlEquipement.DESCRIPTION:
-              structure.desc = ii.textContent
-              structureStatus ++
-              break;
-            default:
-              break;
-          }
+       * */
+      const StructureNodes = Array.from(CraftingNodes[2].querySelector('.quotecontent > div').childNodes)
+        .filter(x => !(x instanceof HTMLBRElement));
+      CraftingPost.structures = StructureNodes.reduce((acc, node) => {
+        if (node instanceof HTMLImageElement) return [[node.currentSrc], ...acc];
+        const [struct, ...next] = acc;
+        struct.push(node.textContent);
+        return [struct, ...next];
+      }, []).map((arr) => {
+        /** @type {Structure} */
+        const struct = {};
+        const [image, text1, text2, text3] = arr;
+        struct.imageUrl = image;
+        if (text3 == null && text2 == null) {
+          struct.benefit = text1;
+        } else if (text1.match(/Terrain/) != null) {
+          struct.terrain = text1;
+          struct.health = text2;
+          struct.benefit = text3;
+        } else {
+          struct.health = text1;
+          struct.benefit = text2;
         }
-      }
 
-      //Redo for the last one
-      if(structure.imageUrl !== undefined) {
-        CraftingPost.structures.push({})
+        return struct;
+      });
 
-        //Here make a copy of the object in the table instead of copying the reference
-        Object.assign(CraftingPost.structures[CraftingPost.structures.length - 1], structure)
+      StatusPost.Crafting = CraftingPost;
 
+      MagicPost.imageUrl = MagicPost.Post.querySelector('img').src;
+      MagicPost.content = MagicPost.Post.querySelector('.quotecontent > div').textContent;
 
-      }
-
-      StatusPost.Crafting = CraftingPost
-
-      const MagicPost = Posts[2];
-      StatusPost.Magic = Array.from(MagicPost.getElementsByClassName("content")[0].childNodes).find(elem => elem.nodeType === Node.TEXT_NODE).data
-
-      return JSON.stringify(StatusPost)
+      return JSON.stringify(StatusPost);
     })
     .run((error, result) => {
+      if (error) Logger.error(`Got an error when crawling: ${error}`);
+      const res = JSON.parse(result);
 
-      if(error) console.error(error)
-      result = JSON.parse(result);
+      res.Crafting.structures.map(structureTechParser);
+      res.Survivors = survivorParser(res.Survivors);
+      res.LooseItems = looseParser(res.LooseItems);
+      res.Structures = structureParser(res.Structures);
+      refreshTurn(res.Turns[res.Turns.length - 1]);
 
-      result.Crafting.structures.map(structureTechParser)
-      result.Survivors = survivorParser(result.Survivors)
-      result.LooseItems = looseParser(result.LooseItems)
-      result.Structures = structureParser(result.Structures)
-      refreshTurn(result.Turns[result.Turns.length - 1]);
+      request(res.MapUrl).pipe(fs.createWriteStream('save/blankmap.png'));
 
-      request(result.MapUrl).pipe(fs.createWriteStream('save/blankmap.png'));
-
+      // ? Here we could optimize by splitting survivors, loose item and structures
       (new StatusMongoose({
         date: new Date(),
-        Turn: result.Turns[result.Turns.length - 1].designation,
-        Survivors: [...result.Survivors,
-                    ...result.LooseItems,
-                    ...result.Structures],
-        Craft: result.Crafting,
-        Magic: result.Magic
-      })).save().then(_ => console.info("Updated"));
-    }).end()
-}
-
-function getTurnInfo() {
-  return new Promise((resolve, reject) => {
-    StatusMongoose.find({}, 'Turn', {
-      skip:0,
-      limit: 1,
-      sort: {
-        date: -1
-      },
-    }, (err, stat) => {
-      if(err) { reject(err) }
-      resolve(stat)
+        Turn: res.Turns[res.Turns.length - 1].designation,
+        Survivors: [...res.Survivors,
+          ...res.LooseItems,
+          ...res.Structures],
+        Craft: res.Crafting,
+        Magic: res.Magic,
+      })).save().then(() => Logger.info('Updated'));
     })
-  })
-}
-
-function getAllInfo() {
-  return new Promise((resolve, reject) => {
-    StatusMongoose.find({}, ['Survivors'], {
-      skip:0,
-      limit: 1,
-      sort: {
-        date: -1
-      },
-    }, (err, stat) => {
-      if(err) { reject(err) }
-      resolve(stat[0].Survivors)
-    })
-  })
-}
-
-function getInfoByCoord(x, y) {
-  return new Promise((resolve, reject) => {
-    StatusMongoose.find({}, ['Survivors'], {
-      skip:0,
-      limit: 1,
-      sort: {
-        date: -1
-      },
-    }, (err, stat) => {
-      if(err) { reject(err) }
-      const inhab = stat[0].Survivors
-        .filter(i => i !== null && i !== undefined)
-        .filter(i => i.Position.x == x && i.Position.y == y)
-      resolve(inhab)
-    })
-  })
-}
-
-function getCounts() {
-  return new Promise((resolve, reject) => {
-    StatusMongoose.find({}, ['Survivors.items',
-                             'Survivors.conditions',
-                             'Survivors.jobs'], {
-      skip:0,
-      limit: 1,
-      sort: {
-        date: -1
-      },
-    }).exec( (err, stat) => {
-      if(err) { reject(err) }
-      const count = stat[0].Survivors
-        .reduce((acc, cur) => {
-          const counting = cur.items
-                   .concat(cur.conditions)
-                   .concat(cur.jobs)
-          for (const item of counting) {
-            if (!item) continue
-            if (item in acc) acc[item]++
-            else acc[item] = 1
-          }
-          return acc
-        }, {})
-      resolve(count)
-    })
-  })
-}
-
-function getDetailsAboutStat(stat) {
-  return new Promise((resolve, reject) => {
-    StatusMongoose.find({}, ['Survivors'], {
-      skip: 0,
-      limit: 1,
-      sort: {
-        date: -1
-      }
-    }).exec((err, d) => {
-      if(err) { reject(err) }
-      const details = []
-      const survivors = d[0].Survivors;
-      for(const survivor of survivors) {
-        const search = survivor.items
-               .concat(survivor.conditions)
-               .concat(survivor.jobs)
-        if(search.find(e => e === stat)) {
-          const count = search
-            .filter(elem => elem === stat)
-            .length
-          details.push([survivor.Name,
-                        survivor.Position.x,
-                        survivor.Position.y,
-                        count])
-        }
-      }
-      resolve(details)
-    })
-  })
+    .end();
 }
 
 module.exports = {
-  getTurnInfo,
-  getDetailsAboutStat,
-  getCounts,
-  getInfoByCoord,
-  getAllInfo,
   Position,
   Inhabitant,
   refresh,
-}
+};

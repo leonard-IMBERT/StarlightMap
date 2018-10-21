@@ -1,40 +1,37 @@
-import Images from './Images'
-import Zoomer from './Zoomer'
+import Point from './Point';
 
 /**
- * Class Point representing a point in space
- */
-export class Point {
-  /**
-   * The basic constructor of a point
-   * @param {number} x The x position
-   * @param {number} y The y position
-   */
-  constructor(x, y) {
-    this.x = x
-    this.y = y
-  }
+* Return the position of the i th corner of the hexagon
+* @param {Point} center The center of the hexagon
+* @param {number} size The size of the hexagon
+* @param {number} i The index of the hexagon's corner
+*/
+export function HexCorner(center, size, i) {
+  const angleDeg = 60 * i + 30;
+  const angleRad = Math.PI / 180 * angleDeg;
+  return new Point(center.x + size * Math.cos(angleRad),
+    center.y + size * Math.sin(angleRad));
 }
 
 /**
  * Drawer object used to ease the drawing on canvas
- **/
-export default class Drawer{
+ * */
+export default class Drawer {
   /**
    * The basic constructor for the drawer
    * @param {HTMLCanvasElement} canvas The canvas on which the drawer will draw
    */
   constructor(canvas) {
-    if(!(canvas instanceof HTMLCanvasElement)) throw new Error("The giving div is Either not a canvas or not an Html element");
+    if (!(canvas instanceof HTMLCanvasElement)) throw new Error('The giving div is Either not a canvas or not an Html element');
     /**
      * The canvas on which the drawer will draw
      */
-    this.canvas = canvas
+    this.canvas = canvas;
 
     /**
      * The context of the canvas
      */
-    this.ctx = canvas.getContext('2d')
+    this.ctx = canvas.getContext('2d');
   }
 
   /**
@@ -43,21 +40,21 @@ export default class Drawer{
    * @param {number} y The height of the canvas
    */
   setSize(x, y) {
-    this.canvas.height = y
-    this.canvas.width = x
+    this.canvas.height = y;
+    this.canvas.width = x;
   }
 
   /**
    * Draw a rectangle on the canvas
-   * @param {number} posX The x postion of the top left corner 
+   * @param {number} posX The x postion of the top left corner
    * @param {number} posY The y position of the top left corner
    * @param {number} height The height of the rectangle
    * @param {number} width The width of the rectangle
    * @param {string} color The color of the rectangle following the css standard for color
    */
   drawRectangle(posX, posY, height, width, color) {
-    if(color) this.ctx.fillStyle = color
-    this.ctx.fillRect(posX, posY, height, width)
+    if (color) this.ctx.fillStyle = color;
+    this.ctx.fillRect(posX, posY, height, width);
   }
 
   /**
@@ -71,24 +68,24 @@ export default class Drawer{
    * @param {number} [fontSize=12] The font size (in px)
    * @param {string} [fontStyle="monospace"] The font of the text
    */
-  drawTextBoxed(posX, posY, text, textColor, boxColor, fontSize=12, fontStyle="monospace") {
-    this.ctx.font = `${fontSize}px ${fontStyle}`
-    const measure = this.ctx.measureText(text)
-    this.ctx.fillStyle = boxColor
-    this.ctx.fillRect(posX - 2, posY - 2 - fontSize, measure.width + 4, fontSize + 4)
-    this.drawText(posX, posY, text, textColor)
+  drawTextBoxed(posX, posY, text, textColor, boxColor, fontSize = 12, fontStyle = 'monospace') {
+    this.ctx.font = `${fontSize}px ${fontStyle}`;
+    const measure = this.ctx.measureText(text);
+    this.ctx.fillStyle = boxColor;
+    this.ctx.fillRect(posX - 2, posY - 2 - fontSize, measure.width + 4, fontSize + 4);
+    this.drawText(posX, posY, text, textColor);
   }
 
   /**
    * Draw some text on the canvas
-   * @param {number} posX The x position of the text 
+   * @param {number} posX The x position of the text
    * @param {number} posY The y position of the text
-   * @param {string} text The text to draw 
+   * @param {string} text The text to draw
    * @param {string} color The color of the text following the css standard for color name
    */
   drawText(posX, posY, text, color) {
-    if(color) this.ctx.fillStyle = color
-    this.ctx.fillText(text, posX, posY)
+    if (color) this.ctx.fillStyle = color;
+    this.ctx.fillText(text, posX, posY);
   }
 
   /**
@@ -108,22 +105,8 @@ export default class Drawer{
       posX,
       posY,
       image.width * scale,
-      image.height * scale
-    )
-  }
-
-
-  /**
-   * Return the position of the i th corner of the hexagon
-   * @param {Point} center The center of the hexagon
-   * @param {number} size The size of the hexagon
-   * @param {number} i The index of the hexagon's corner
-   */
-  HexCorner(center, size, i) {
-    const angle_deg = 60 * i + 30
-    const angle_rad = Math.PI / 180 * angle_deg
-    return new Point(center.x + size * Math.cos(angle_rad),
-      center.y + size * Math.sin(angle_rad))
+      image.height * scale,
+    );
   }
 
   /**
@@ -134,18 +117,18 @@ export default class Drawer{
    * @param {string} color The color of the hexagon following the css standard for color
    */
   drawHexagon(posx, posy, size, color) {
-    const center = new Point(posx, posy)
-    this.ctx.beginPath()
-    this.ctx.strokeStyle = color
+    const center = new Point(posx, posy);
+    this.ctx.beginPath();
+    this.ctx.strokeStyle = color;
 
-    const cycle = [0,1,2,3,4,5,0]
+    const cycle = [0, 1, 2, 3, 4, 5, 0];
 
-    cycle.forEach(number => {
-      const point = this.HexCorner(center, size, number)
-      this.ctx.lineTo(point.x, point.y)
-    })
+    cycle.forEach((number) => {
+      const point = HexCorner(center, size, number);
+      this.ctx.lineTo(point.x, point.y);
+    });
 
-    this.ctx.stroke()
+    this.ctx.stroke();
   }
 
   /**
@@ -166,16 +149,16 @@ export default class Drawer{
       posX,
       posY,
       image.width,
-      image.height
-    )
+      image.height,
+    );
   }
 
   /**
    * Clean the canvas by drawing a white square on the canvas
-   **/
+   * */
   clean() {
-    this.ctx.fillStyle = '#FFFFFF'
-    this.ctx.fillRect(0,0,1000,1000)
+    this.ctx.fillStyle = '#FFFFFF';
+    this.ctx.fillRect(0, 0, 1000, 1000);
   }
 
   /**
@@ -183,6 +166,6 @@ export default class Drawer{
    * @param {string} font The font to use
    */
   setFont(font) {
-    this.ctx.font = font
+    this.ctx.font = font;
   }
 }
