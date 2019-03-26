@@ -99,4 +99,15 @@ export default class Zoomer {
     const newY = y - ((this.scale - 1) * this.sizey / 2) - this.offsetY;
     f(newX, newY, this.scale);
   }
+
+  /**
+   * Return the offset difference
+   * @returns {{x: number, y:number}} - The vector representing the offset difference of the zoomer
+   */
+  zoomOffset() {
+    return {
+      x: this.sizex / 2 + (this.offsetX - this.sizex / 2) / this.scale,
+      y: this.sizey / 2 + (this.offsetY - this.sizey / 2) / this.scale,
+    };
+  }
 }

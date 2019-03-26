@@ -39,6 +39,11 @@ export default class Hexagon {
      * Boolean teeeling if the hexagon must be shown
      */
     this.active = false;
+
+    /**
+     * Boolean telling if the hexagon has been selected
+     */
+    this.select = false;
   }
 
   /**
@@ -48,7 +53,9 @@ export default class Hexagon {
    * @returns true if the point is in the hexagon, false if not
    */
   isIn(x, y) {
-    if (Math.abs(this.pos.x - x) < this.size.x && Math.abs(this.pos.y - y) < this.size.y) {
+    const dist = Math.sqrt((Math.abs(this.pos.x - x) ** 2) + (Math.abs(this.pos.y - y) ** 2));
+
+    if (dist < this.size.y) {
       this.active = true;
     } else {
       this.active = false;
@@ -60,19 +67,18 @@ export default class Hexagon {
    * Draw the hexagon on the given drawer
    * @param {Drawer} drawer - The drawer on which draw
    * @param {Zoomer} zoomer - The zoomer to use
-   * @param {Point} offset - The offset of the hexagon from its position
-   * @param {Point} labelOffset - The offset of the label from the hexagon position
+   * @param {number=} labelOffset - The offset of the label from the hexagon position
    */
-  draw(drawer, zoomer, offset, labelOffset) {
+  draw(drawer, zoomer, labelOffset) {
     const lOffset = labelOffset || 0;
     drawer.drawHexagon(
-      (this.pos.x - offset.x) * zoomer.scale,
-      (this.pos.y - offset.y) * zoomer.scale,
+      (this.pos.x - zoomer.zoomOffset().x) * zoomer.scale,
+      (this.pos.y - zoomer.zoomOffset().y) * zoomer.scale,
       this.size.x * zoomer.scale,
       this.color,
     );
-    drawer.drawTextBoxed((this.pos.x - offset.x) * zoomer.scale - this.size.x,
-      (this.pos.y - offset.y) * zoomer.scale - this.size.y - 2 - lOffset,
+    drawer.drawTextBoxed((this.pos.x - zoomer.zoomOffset().x) * zoomer.scale - this.size.x,
+      (this.pos.y - zoomer.zoomOffset().y) * zoomer.scale - this.size.y - 2 - lOffset,
       `${this.coord.x}, ${this.coord.y}`,
       this.color, '#000000');
   }

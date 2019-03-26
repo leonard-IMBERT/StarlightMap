@@ -32,7 +32,7 @@ app.get('/blankmap', (req, res) => {
 });
 
 app.get('/script', (req, res) => {
-  res.sendFile(path.join(__dirname, 'compile/script.front.js'));
+  res.sendFile(path.join(__dirname, 'dist/script.front.js'));
 });
 
 app.get('/metadata', (req, res) => {
