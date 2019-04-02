@@ -4,6 +4,9 @@ StarlightMap is a webpage which provides an interactive map of the Isle of Starl
 
 A big thanks to him and to the community for what they are doing on this forum.
 
+## Alternative front-end
+Two front are available one on the `/` path and the older on the `/old` path
+
 ## Dependencies
 This software depends on
  - MongoDB
@@ -13,6 +16,13 @@ This software depends on
 If you want to run it, please verify that your server has these installed. Node.js dependencies can be installed by running:
 ```
 npm install
+```
+
+## Building
+
+You must build the project before running it. You can do so by running
+```
+npm run build
 ```
 
 ## Testing

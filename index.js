@@ -13,9 +13,11 @@ const onError = req => err => Logger.error(`Got an error with the request: ${err
 
 app.engine('html', require('ejs').renderFile);
 
+app.use('/', express.static('starlight-front/dist'));
+
 app.set('views', path.join(__dirname, 'src/front/html'));
 
-app.get('/', (req, res) => {
+app.get('/old', (req, res) => {
   res.render('index.html');
 });
 

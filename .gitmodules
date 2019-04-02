@@ -1,0 +1,3 @@
+[submodule "starlight-front"]
+	path = starlight-front
+	url = git@github.com:leonard-IMBERT/starlight-front.git
