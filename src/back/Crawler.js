@@ -63,15 +63,27 @@ function survivorParser(data) {
       const survivorClass = inhabitant.match(ClassRegex);
       const curProfClass = details[1].match(DescriptionRegex);
 
+      /**
+       * @type {[{ Name: string, Level: string }]}
+       */
       const jobs = [];
       if (profession) {
-        profession[1].split(/ +/).forEach(job => jobs.push(job));
+        profession[1].split(/ +/).forEach((job) => {
+          const Name = job.slice(0, -1);
+          jobs.push({ Name, Level: '?' });
+        });
       }
       if (survivorClass) {
-        survivorClass[1].split(/ +/).forEach(job => jobs.push(job));
+        survivorClass[1].split(/ +/).forEach((job) => {
+          const Name = job.slice(0, -1);
+          jobs.push({ Name, Level: '?' });
+        });
       }
       if (curProfClass) {
-        curProfClass[1].split(/[, ]+/).forEach(job => jobs.push(job));
+        curProfClass[1].split(/, +/).forEach((job) => {
+          const [Name, Level] = job.split(' ');
+          jobs.push({ Name, Level });
+        });
       }
 
       /*
@@ -155,7 +167,7 @@ function looseParser(data) {
         0, 0, // Health, not valid
         items,
         ['Loose'],
-        [''],
+        [],
       );
     } catch (e) {
       Logger.error(`Got this error: ${e} with the line ${line}`);
@@ -191,7 +203,7 @@ function structureParser(data) {
         health ? health[2] : 0,
         storage ? parseMultiItems(storage[1]) : [''],
         ['Structure'],
-        [''],
+        [],
       );
     } catch (e) {
       Logger.error(`Got this error: ${e} with the line ${line}`);

@@ -14,7 +14,7 @@ class Inhabitant {
    * @param {Number} maxHealth The maximum health of the inhabitant
    * @param {String[]} items An array containing the items of the inhabitant
    * @param {String[]} conditions An array containing the different status of the inhabitant
-   * @param {String[]} jobs An array containing the jobs of the inhabitant
+   * @param {[{ Name: string, Level: string }]} jobs An array containing the jobs of the inhabitant
    */
   constructor(name, des, posX, posY, currentHealth, maxHealth, items, conditions, jobs) {
     this.Name = name;

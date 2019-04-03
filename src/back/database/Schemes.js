@@ -9,6 +9,14 @@ mongoose.connect('mongodb://localhost/Starlight', { useNewUrlParser: true }).cat
 });
 
 /**
+ * The Mongoose scheme for a job
+ */
+const JobScheme = new Schema({
+  Name: 'string',
+  Level: 'string',
+});
+
+/**
  * The Mongoose scheme for a position
  */
 const PositionSchema = new Schema({ x: 'number', y: 'number' });
@@ -25,7 +33,7 @@ const InhabitantSchema = new Schema({
   MaxHealth: 'number',
   items: ['string'],
   conditions: ['string'],
-  jobs: ['string'],
+  jobs: [JobScheme],
 });
 
 /**
@@ -68,4 +76,5 @@ module.exports = {
   EquipementSchema,
   StructureSchema,
   StatusMongoose,
+  JobScheme,
 };

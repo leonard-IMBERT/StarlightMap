@@ -50,7 +50,7 @@ async function getInfoByCoord(x, y) {
 async function getCounts() {
   const results = (await StatusMongoose.find({}, ['Survivors.items',
     'Survivors.conditions',
-    'Survivors.jobs'], getAllSortedByDate).exec())[0];
+    'Survivors.jobs.Name'], getAllSortedByDate).exec())[0];
 
   if (results == null || results.Survivors == null) throw new Error('There was an error when queriying the mongo (getCounts)');
   return results.Survivors
@@ -58,7 +58,10 @@ async function getCounts() {
       cur.items
         .concat(cur.conditions)
         .concat(cur.jobs)
-        .filter(item => item != null)
+        .map((item) => {
+          if (item.Name) return item.Name;
+          return item;
+        }).filter(item => item != null)
         .forEach((item) => {
           if (item in acc) acc[item] += 1;
           else acc[item] = 1;
