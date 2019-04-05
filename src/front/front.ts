@@ -31,7 +31,7 @@ function fetchTurn() {
 function getSurvivors(point?: { x: number, y: number }) {
   return ((point ? fetch(Requests.InfoRequest(point.x, point.y)) : fetch(Requests.AllInfoRequest()))
     .then(d => d.json())
-    .then((d) => {
+    .then((dat) => {
       // Cleaning the search
       inputSearch.value = '';
 
@@ -41,6 +41,12 @@ function getSurvivors(point?: { x: number, y: number }) {
       }
       cards = [];
 
+      let d;
+      if (dat instanceof Array) {
+        d = dat;
+      } else {
+        d = dat.Survivors;
+      }
 
       // Populating the data
       d.forEach((inhab: any) => {
