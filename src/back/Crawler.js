@@ -140,9 +140,9 @@ function parseMultiItems(line) {
   const itemsMatch = line.match(ItemsRegex);
   if (!itemsMatch) return [];
   return itemsMatch.map((items) => {
-    const [, number, item] = items.match(ItemRegex);
+    const [, nb, item] = items.match(ItemRegex);
 
-    return new Array(number).fill(item);
+    return new Array(Number(nb)).fill(item);
   }).reduce((g1, g2) => g1.concat(g2));
 }
 
