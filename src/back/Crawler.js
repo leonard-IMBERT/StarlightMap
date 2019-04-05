@@ -212,6 +212,61 @@ function structureParser(data) {
   }).filter(d => d != null);
 }
 
+function MagicParser(data) {
+  const StarChartRegex = /^Star Chart: ?(\d+), ?(\d+) *$/;
+  const SpellRegex = /^Spell: ?(\w+) *$/;
+  const LevelParser = /^Level (\d): (.*)$/;
+  const OmCombo = /^Om Combo: (.*)$/;
+
+  const magics = data.split(/\n ?\n/);
+
+  return magics.map((magic) => {
+    try {
+      const lines = magic.split(/\n/);
+      const Name = lines[0];
+      const Constelation = lines[1];
+      const StarChart = lines[2].match(StarChartRegex);
+      const Spell = lines[3].match(SpellRegex);
+
+      const [,,,, ...Levels] = lines;
+      let [Om, ...SureLevels] = Levels.reverse();
+
+      SureLevels = SureLevels.map((level) => {
+        const parsed = level.match(LevelParser);
+        if (parsed[1] != null && parsed[2] != null) {
+          return { Level: parsed[1], Description: parsed[2] };
+        }
+        return undefined;
+      });
+
+      if (Om.match(OmCombo) != null) {
+         Om = Om.match(OmCombo)[1];
+      } else {
+        const parsed = Om.match(LevelParser);
+        SureLevels.push({
+          Level: parsed[1],
+          Description: parsed[2]
+        });
+        Om = null;
+      }
+
+      const Magic = {
+        Name,
+        Constelation,
+        StarChart: { x: StarChart[1], y: StarChart[2] },
+        Spell: Spell[1],
+        Levels: SureLevels,
+        OmCombo: Om,
+      }
+
+      return Magic
+    } catch (e) {
+      Logger.error(`Got this error: ${e} with the magic ${magic}`);
+      return undefined;
+    }
+  });
+}
+
 function refreshTurn(turn) {
   Logger.info(`Current turn update started: ${turn.designation}`);
 
@@ -388,7 +443,9 @@ function refresh() {
       StatusPost.Crafting = CraftingPost;
 
       MagicPost.imageUrl = MagicPost.Post.querySelector('img').src;
-      MagicPost.content = MagicPost.Post.querySelector('.quotecontent > div').textContent;
+      MagicPost.content = MagicPost.Post.querySelector('.quotecontent > div').innerText;
+
+      StatusPost.Magic = MagicPost;
 
       return JSON.stringify(StatusPost);
     })
@@ -412,7 +469,7 @@ function refresh() {
           ...res.LooseItems,
           ...res.Structures],
         Craft: res.Crafting,
-        Magic: res.Magic,
+        Magic: MagicParser(res.Magic.content),
       })).save().then(() => Logger.info('Updated'));
     })
     .end();

@@ -59,6 +59,16 @@ const StructureSchema = new Schema({
 /**
  * The Mongoose model for a Turn
  */
+
+const MagicSchema = new Schema({
+  Name: 'string',
+  Constelation: 'string',
+  StarChart: { x: Number, y: Number },
+  Spell: 'string',
+  Levels: [{ Level: Number, Description: String }],
+  OmCombo: String,
+
+})
 const StatusMongoose = mongoose.model('Status', {
   date: Date,
   Turn: String,
@@ -67,7 +77,7 @@ const StatusMongoose = mongoose.model('Status', {
     equipements: [EquipementSchema],
     structures: [StructureSchema],
   },
-  Magic: String,
+  Magic: [MagicSchema],
 });
 
 module.exports = {
