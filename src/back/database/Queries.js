@@ -24,9 +24,9 @@ function getTurnInfo() {
  * @returns {Promise<any[]>}
  */
 async function getAllInfo() {
-  const results = (await StatusMongoose.find({}, ['Survivors'], getAllSortedByDate).exec())[0];
+  const results = (await StatusMongoose.find({}, ['Survivors', 'Magic'], getAllSortedByDate).exec())[0];
   if (results == null || results.Survivors == null) throw new Error('There was an error when queriying the mongo (getAllInfo)');
-  return results.Survivors;
+  return results;
 }
 
 /**
