@@ -5,9 +5,9 @@ type Metadata = {
   "bottom-offset": number,
   "vertical-step": number,
   "horizontal-step": number,
-  "left-offset": any,
-  "row-length": any,
-  "special": any, 
+  "left-offset": Record<string, number>,
+  "row-length": Record<string, number>,
+  "special": Array<[number, number]>,
 }
 
 export default Metadata
