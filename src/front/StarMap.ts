@@ -42,15 +42,24 @@ class StarMap {
     const proms: Promise<void>[] = []
     proms.push(fetchMetadata().then((metadata) => this.metadata = metadata)
     .then(() => {
+      const skipHex: Record<number, number> = {};
+      this.metadata.special.forEach((hex: [number, number]) => {
+        skipHex[hex[0]] = hex[1] - 1;
+      });
       for (let row = 1; row <= 71; row += 1) {
+        let skipCount = 0;
         for (let col = 0; col < this.metadata['row-length'][`${row}`]; col += 1) {
+          if (skipHex[row] === col) {
+            skipCount += 1;
+            continue;
+          }
           this.hexagons.push(new Hexagon(
             this.metadata['left-offset'][`${row}`] + col * this.metadata['horizontal-step'],
             this.metadata['bottom-offset'] + row * this.metadata['vertical-step'] - Math.round(this.metadata.flatten * row),
             10,
             10,
             row,
-            col + 1,
+            col + 1 - skipCount,
           ));
         }
       }
