@@ -240,12 +240,12 @@ function MagicParser(data) {
       });
 
       if (Om.match(OmCombo) != null) {
-         Om = Om.match(OmCombo)[1];
+        [, Om] = Om.match(OmCombo);
       } else {
         const parsed = Om.match(LevelParser);
         SureLevels.push({
           Level: parsed[1],
-          Description: parsed[2]
+          Description: parsed[2],
         });
         Om = null;
       }
@@ -257,9 +257,9 @@ function MagicParser(data) {
         Spell: Spell[1],
         Levels: SureLevels,
         OmCombo: Om,
-      }
+      };
 
-      return Magic
+      return Magic;
     } catch (e) {
       Logger.error(`Got this error: ${e} with the magic ${magic}`);
       return undefined;

@@ -68,7 +68,7 @@ const MagicSchema = new Schema({
   Levels: [{ Level: Number, Description: String }],
   OmCombo: String,
 
-})
+});
 const StatusMongoose = mongoose.model('Status', {
   date: Date,
   Turn: String,
