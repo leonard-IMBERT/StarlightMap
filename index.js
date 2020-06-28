@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 
-const Crawler = require('./src/back/CrawlerPuppet');
+const Crawler = require('./src/back/Crawler');
 const Logger = require('./src/back/Logger');
 const Queries = require('./src/back/database/Queries');
 
