@@ -1,6 +1,6 @@
-const Nightmare = require('nightmare');
-const request = require('request');
+const puppeteer = require('puppeteer');
 const fs = require('fs');
+const request = require('request');
 
 const Logger = require('./Logger');
 const Position = require('./classes/Position');
@@ -8,16 +8,6 @@ const Inhabitant = require('./classes/Inhabitant');
 const { StatusMongoose } = require('./database/Schemes');
 
 const STATUS_PAGE_URL = 'http://willsaveworldforgold.com/forum/viewtopic.php?f=11&t=243';
-
-/**
- * @returns {Nightmare} The Nightmare instance
- */
-function getNightmare() {
-  return Nightmare({
-    gotoTimeout: 120000, // in ms
-    executionTimeout: 120000, // in ms
-  });
-}
 
 function structureTechParser(data) {
   const HealthRegex = /Health: *(\d)+/;
@@ -74,6 +64,7 @@ function survivorParser(data) {
       if (follower) {
         inventory.push(follower[1]);
       }
+ 
       /**
        * @type {[{ Name: string, Level: string }]}
        */
@@ -242,6 +233,7 @@ function MagicParser(data) {
       const [,,,, ...Levels] = lines;
       let [Om, ...SureLevels] = Levels.reverse();
 
+
       SureLevels = SureLevels.map((level) => {
         const parsed = level.match(LevelParser);
         if (parsed[1] != null && parsed[2] != null) {
@@ -251,12 +243,12 @@ function MagicParser(data) {
       });
 
       if (Om.match(OmCombo) != null) {
-         Om = Om.match(OmCombo)[1];
+        [, Om] = Om.match(OmCombo);
       } else {
         const parsed = Om.match(LevelParser);
         SureLevels.push({
           Level: parsed[1],
-          Description: parsed[2]
+          Description: parsed[2],
         });
         Om = null;
       }
@@ -268,9 +260,9 @@ function MagicParser(data) {
         Spell: Spell[1],
         Levels: SureLevels,
         OmCombo: Om,
-      }
+      };
 
-      return Magic
+      return Magic;
     } catch (e) {
       Logger.error(`Got this error: ${e} with the magic ${magic}`);
       return undefined;
@@ -278,213 +270,219 @@ function MagicParser(data) {
   });
 }
 
-function refreshTurn(turn) {
+const refreshTurn = async (turn, browser) => {
   Logger.info(`Current turn update started: ${turn.designation}`);
 
   const postid = turn.url.split('#')[1];
-  return getNightmare()
-    .goto(turn.url)
-    .wait(5000)
-    .evaluate((id) => {
-      const MapUrl = document.querySelector(`#${id} .content > img`).src;
-      return JSON.stringify(MapUrl);
-    }, postid)
-    .run((error, result) => {
-      if (error) {
-        Logger.error(`Got an error with getting the page: ${error}`);
-        return;
+
+  const page = await browser.newPage();
+
+  await page.goto(turn.url, { waitUntil: 'networkidle0' });
+  const MapUrl = await page.evaluate(id => document.querySelector(`#${id} .content > img`).src, postid);
+
+  request(MapUrl).pipe(fs.createWriteStream('save/map.png'));
+
+  Logger.info('Current turn update finished');
+
+  await page.close();
+};
+
+const refresh = async () => {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+
+  await page.goto(STATUS_PAGE_URL, { waitUntil: 'networkidle0' });
+  await page.waitFor('#p43933');
+
+  const rawData = await page.evaluate(() => {
+    // ==== Type declaration ====
+
+    /**
+     * @typedef {Object} TurnLink
+     * @property {String} designation - The designation of the turn
+     * @property {String} url - The url to the turn post
+     */
+
+    /**
+     * The equipement object
+     * @typedef {Object} Equipement
+     * @property {String} imageUrl - The url to the quipement image
+     * @property {String} desc - The description of the equipement
+     * @property {String} [bonus] - The possible bonus of the equipement
+     * @property {String} [ability] - The possible ability of the equipement,
+     */
+
+    /**
+     * The structure object
+     * @typedef {Object} Structure
+     * @property {String} imageUrl - The url to the structure image
+     * @property {String} [terrain] - The terrain (if precised) on which the structure must be
+     * @property {String} [health] - The maximum health of the structure
+     * @property {String} [benefit] - The benefit given by the structure
+     */
+
+    /**
+     * The object referencing all the possible crafts
+     * @typedef {Object} CraftingPost
+     * @property {Element} Post - The post where we can found the infos
+     * @property {String} TechTreeUrl - The url to the tech tree image
+     * @property {Equipement[]} equipements - An array containing all the possible equipements
+     * @property {String[]} structures - An array containing all the possible structures
+     */
+
+    /**
+     * TODO Find a good structure for the content part
+     * The object referencing all the informations about magic
+     * @typedef {Object} MagicPost
+     * @property {Element} Post - The post where we can found info about magic
+     * @property {String} imageUrl - The url the magic map
+     * @property {String} content - The content of the magic tech tree
+     */
+
+    /**
+     * The object referencing all the element needed to generate the status
+     * @typedef {Object} StatusPost
+     * @property {Element} Post - The post of the status
+     * @property {String} MapUrl - The url of the map image
+     * @property {Element} ActualStatus - The element containing the status
+     * @property {TurnLink[]} Turns - The list of the different turns
+     * @property {String} LooseItems - The loose items text
+     * @property {String} Survivors - The survivors text
+     * @property {String} Structures - The structures text
+     * @property {CraftingPost} Crafting - The crafting tech tree
+     * @property {MagicPost} Magic - The magic tech tree
+     */
+
+    /** @type {StatusPost} */
+    const StatusPost = {
+      Turns: [],
+    };
+
+    /** @type {CraftingPost} */
+    const CraftingPost = {};
+
+    /** @type {MagicPost} */
+    const MagicPost = {};
+
+
+    /**
+     * Parse the text from an element base on the inner nodes
+     * @param {Element} element The element to extract the text from
+     * @returns {String} The string extracted
+     */
+    function textFromElement(element) {
+      return Array.from(element.childNodes).map((x) => {
+        if (x instanceof HTMLBRElement) { return '\n'; }
+        return x.textContent;
+      }).reduce((acc, text) => acc + text, '');
+    }
+
+    [StatusPost.Post, CraftingPost.Post, MagicPost.Post] = document.getElementsByClassName('post');
+
+    StatusPost.ActualStatus = StatusPost.Post.querySelector('.content');
+
+    const [TurnList, Humans, Halflings, Dwarves, Elves, MapImg, Looses, Structures] = StatusPost.ActualStatus.querySelectorAll('img, .quotecontent');
+
+    Array.from(TurnList.querySelectorAll('a')).forEach((turnLink) => {
+      if (turnLink instanceof HTMLAnchorElement) {
+        StatusPost.Turns.push({ designation: turnLink.text, url: turnLink.href });
       }
-      try {
-        const jsonResult = JSON.parse(result);
-        request(jsonResult).pipe(fs.createWriteStream('save/map.png'));
-      } catch (e) {
-        Logger.error(`Got an error when downloading the map: ${e}`);
-        return;
+    });
+
+    StatusPost.Survivors = `${textFromElement(Humans.firstElementChild)} \n\n${textFromElement(Halflings.firstElementChild)} \n\n${textFromElement(Dwarves.firstElementChild)} \n\n${textFromElement(Elves.firstElementChild)} \n\n`;
+    StatusPost.MapUrl = MapImg.src;
+    StatusPost.LooseItems = textFromElement(Looses.firstElementChild);
+    StatusPost.Structures = textFromElement(Structures.firstElementChild);
+
+    // TODO: Proprely parse the craft and the magic
+
+    const CraftingNodes = Array.from(CraftingPost.Post.querySelectorAll('.content > :not(br):not(span)'));
+
+    CraftingPost.TechTreeUrl = CraftingNodes[0].src;
+
+    /**
+     * The equipements
+     * */
+    const EquipementNodes = Array.from(CraftingNodes[1].querySelector('.quotecontent > div').childNodes)
+      .filter(x => !(x instanceof HTMLBRElement));
+
+    CraftingPost.equipements = EquipementNodes.reduce((acc, node) => {
+      if (node instanceof HTMLImageElement) return [[node.currentSrc], ...acc];
+      const [equip, ...next] = acc;
+      equip.push(node.textContent);
+      return [equip, ...next];
+    }, []).map((arr) => {
+      /** @type {Equipement} */
+      const ret = {};
+      [ret.imageUrl, ret.desc, ret.bonus, ret.ability] = arr;
+      return ret;
+    });
+
+    /**
+     * The structures
+     * */
+    const StructureNodes = Array.from(CraftingNodes[2].querySelector('.quotecontent > div').childNodes)
+      .filter(x => !(x instanceof HTMLBRElement));
+    CraftingPost.structures = StructureNodes.reduce((acc, node) => {
+      if (node instanceof HTMLImageElement) return [[node.currentSrc], ...acc];
+      const [struct, ...next] = acc;
+      struct.push(node.textContent);
+      return [struct, ...next];
+    }, []).map((arr) => {
+      /** @type {Structure} */
+      const struct = {};
+      const [image, text1, text2, text3] = arr;
+      struct.imageUrl = image;
+      if (text3 == null && text2 == null) {
+        struct.benefit = text1;
+      } else if (text1.match(/Terrain/) != null) {
+        struct.terrain = text1;
+        struct.health = text2;
+        struct.benefit = text3;
+      } else {
+        struct.health = text1;
+        struct.benefit = text2;
       }
-      Logger.info('Current turn update finished');
-    })
-    .end();
-}
 
-function refresh() {
-  Logger.info('Update started');
-  return getNightmare()
-    .goto(STATUS_PAGE_URL)
-    .wait('#p43933')
-    .evaluate(() => {
-      // ==== Type declaration ====
+      return struct;
+    });
 
-      /**
-       * @typedef {Object} TurnLink
-       * @property {String} designation - The designation of the turn
-       * @property {String} url - The url to the turn post
-       */
+    StatusPost.Crafting = CraftingPost;
 
-      /**
-       * The equipement object
-       * @typedef {Object} Equipement
-       * @property {String} imageUrl - The url to the quipement image
-       * @property {String} desc - The description of the equipement
-       * @property {String} [bonus] - The possible bonus of the equipement
-       * @property {String} [ability] - The possible ability of the equipement,
-       */
+    MagicPost.imageUrl = MagicPost.Post.querySelector('img').src;
+    MagicPost.content = textFromElement(MagicPost.Post.querySelector('.quotecontent > div'));
 
-      /**
-       * The structure object
-       * @typedef {Object} Structure
-       * @property {String} imageUrl - The url to the structure image
-       * @property {String} [terrain] - The terrain (if precised) on which the structure must be
-       * @property {String} [health] - The maximum health of the structure
-       * @property {String} [benefit] - The benefit given by the structure
-       */
+    StatusPost.Magic = MagicPost;
 
-      /**
-       * The object referencing all the possible crafts
-       * @typedef {Object} CraftingPost
-       * @property {Element} Post - The post where we can found the infos
-       * @property {String} TechTreeUrl - The url to the tech tree image
-       * @property {Equipement[]} equipements - An array containing all the possible equipements
-       * @property {String[]} structures - An array containing all the possible structures
-       */
+    return JSON.stringify(StatusPost);
+  });
 
-      /**
-       * TODO Find a good structure for the content part
-       * The object referencing all the informations about magic
-       * @typedef {Object} MagicPost
-       * @property {Element} Post - The post where we can found info about magic
-       * @property {String} imageUrl - The url the magic map
-       * @property {String} content - The content of the magic tech tree
-       */
+  page.close();
 
-      /**
-       * The object referencing all the element needed to generate the status
-       * @typedef {Object} StatusPost
-       * @property {Element} Post - The post of the status
-       * @property {String} MapUrl - The url of the map image
-       * @property {Element} ActualStatus - The element containing the status
-       * @property {TurnLink[]} Turns - The list of the different turns
-       * @property {String} LooseItems - The loose items text
-       * @property {String} Survivors - The survivors text
-       * @property {String} Structures - The structures text
-       * @property {CraftingPost} Crafting - The crafting tech tree
-       * @property {MagicPost} Magic - The magic tech tree
-       */
+  const res = JSON.parse(rawData);
 
-      /** @type {StatusPost} */
-      const StatusPost = {
-        Turns: [],
-      };
 
-      /** @type {CraftingPost} */
-      const CraftingPost = {};
+  res.Crafting.structures.map(structureTechParser);
+  res.Survivors = survivorParser(res.Survivors);
+  res.LooseItems = looseParser(res.LooseItems);
+  res.Structures = structureParser(res.Structures);
+  res.Magic.content = MagicParser(res.Magic.content);
+  await refreshTurn(res.Turns[res.Turns.length - 1], browser);
+  await browser.close();
 
-      /** @type {MagicPost} */
-      const MagicPost = {};
+  request(res.MapUrl).pipe(fs.createWriteStream('save/blankmap.png'));
 
-      [StatusPost.Post, CraftingPost.Post, MagicPost.Post] = document.getElementsByClassName('post');
-
-      StatusPost.ActualStatus = StatusPost.Post.querySelector('.content');
-
-      const [TurnList, Humans, Halflings, Dwarves, Elves, MapImg, Looses, Structures] = StatusPost.ActualStatus.querySelectorAll('img, .quotecontent');
-
-      Array.from(TurnList.querySelectorAll('a')).forEach((turnLink) => {
-        if (turnLink instanceof HTMLAnchorElement) {
-          StatusPost.Turns.push({ designation: turnLink.text, url: turnLink.href });
-        }
-      });
-
-      StatusPost.Survivors = `${Humans.firstElementChild.innerText} \n\n${Halflings.firstElementChild.innerText} \n\n${Dwarves.firstElementChild.innerText} \n\n${Elves.firstElementChild.innerText} \n\n`;
-      StatusPost.MapUrl = MapImg.src;
-      StatusPost.LooseItems = Looses.firstElementChild.innerText;
-      StatusPost.Structures = Structures.firstElementChild.innerText;
-
-      // TODO: Proprely parse the craft and the magic
-
-      const CraftingNodes = Array.from(CraftingPost.Post.querySelectorAll('.content > :not(br):not(span)'));
-
-      CraftingPost.TechTreeUrl = CraftingNodes[0].src;
-
-      /**
-       * The equipements
-       * */
-      const EquipementNodes = Array.from(CraftingNodes[1].querySelector('.quotecontent > div').childNodes)
-        .filter(x => !(x instanceof HTMLBRElement));
-
-      CraftingPost.equipements = EquipementNodes.reduce((acc, node) => {
-        if (node instanceof HTMLImageElement) return [[node.currentSrc], ...acc];
-        const [equip, ...next] = acc;
-        equip.push(node.textContent);
-        return [equip, ...next];
-      }, []).map((arr) => {
-        /** @type {Equipement} */
-        const ret = {};
-        [ret.imageUrl, ret.desc, ret.bonus, ret.ability] = arr;
-        return ret;
-      });
-
-      /**
-       * The structures
-       * */
-      const StructureNodes = Array.from(CraftingNodes[2].querySelector('.quotecontent > div').childNodes)
-        .filter(x => !(x instanceof HTMLBRElement));
-      CraftingPost.structures = StructureNodes.reduce((acc, node) => {
-        if (node instanceof HTMLImageElement) return [[node.currentSrc], ...acc];
-        const [struct, ...next] = acc;
-        struct.push(node.textContent);
-        return [struct, ...next];
-      }, []).map((arr) => {
-        /** @type {Structure} */
-        const struct = {};
-        const [image, text1, text2, text3] = arr;
-        struct.imageUrl = image;
-        if (text3 == null && text2 == null) {
-          struct.benefit = text1;
-        } else if (text1.match(/Terrain/) != null) {
-          struct.terrain = text1;
-          struct.health = text2;
-          struct.benefit = text3;
-        } else {
-          struct.health = text1;
-          struct.benefit = text2;
-        }
-
-        return struct;
-      });
-
-      StatusPost.Crafting = CraftingPost;
-
-      MagicPost.imageUrl = MagicPost.Post.querySelector('img').src;
-      MagicPost.content = MagicPost.Post.querySelector('.quotecontent > div').innerText;
-
-      StatusPost.Magic = MagicPost;
-
-      return JSON.stringify(StatusPost);
-    })
-    .run((error, result) => {
-      if (error) Logger.error(`Got an error when crawling: ${error}`);
-      const res = JSON.parse(result);
-
-      res.Crafting.structures.map(structureTechParser);
-      res.Survivors = survivorParser(res.Survivors);
-      res.LooseItems = looseParser(res.LooseItems);
-      res.Structures = structureParser(res.Structures);
-      refreshTurn(res.Turns[res.Turns.length - 1]);
-
-      request(res.MapUrl).pipe(fs.createWriteStream('save/blankmap.png'));
-
-      // ? Here we could optimize by splitting survivors, loose item and structures
-      (new StatusMongoose({
-        date: new Date(),
-        Turn: res.Turns[res.Turns.length - 1].designation,
-        Survivors: [...res.Survivors,
-          ...res.LooseItems,
-          ...res.Structures],
-        Craft: res.Crafting,
-        Magic: MagicParser(res.Magic.content),
-      })).save().then(() => Logger.info('Updated'));
-    })
-    .end();
-}
+  // ? Here we could optimize by splitting survivors, loose item and structures
+  (new StatusMongoose({
+    date: new Date(),
+    Turn: res.Turns[res.Turns.length - 1].designation,
+    Survivors: [...res.Survivors,
+      ...res.LooseItems,
+      ...res.Structures],
+    Craft: res.Crafting,
+    Magic: res.Magic.content,
+  })).save().then(() => Logger.info('Updated'));
+};
 
 module.exports = {
   Position,
