@@ -64,7 +64,7 @@ function survivorParser(data) {
       if (follower) {
         inventory.push(follower[1]);
       }
-
+ 
       /**
        * @type {[{ Name: string, Level: string }]}
        */
