@@ -15,6 +15,8 @@ app.engine('html', require('ejs').renderFile);
 
 app.use('/', express.static('starlight-front/dist'));
 
+app.use('/dist', express.static('starlight-front/dist'));
+
 app.set('views', path.join(__dirname, 'src/front/html'));
 
 app.get('/old', (req, res) => {
