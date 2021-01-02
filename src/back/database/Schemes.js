@@ -3,7 +3,10 @@ const { Schema } = require('mongoose');
 
 const Logger = require('./../Logger');
 
-mongoose.connect('mongodb://localhost/Starlight', { useNewUrlParser: true }).catch((e) => {
+mongoose.connect('mongodb://localhost/Starlight', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+}).catch((e) => {
   Logger.error(`Failed to connect to the mongo, reason: ${e}`);
   process.exit(-1);
 });

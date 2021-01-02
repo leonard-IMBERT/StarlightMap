@@ -2,3 +2,4 @@ compile/
 save/
 node_modules/
 dist/
+.cache/
