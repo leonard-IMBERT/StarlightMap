@@ -20,5 +20,5 @@ cd ..
 echo -e "${GREEN}Done building front${NC}"
 
 echo -e "${GREEN}Building old front${NC}"
-npm run oldBuild
+npm run pack
 echo -e "${GREEN}Done building old front${NC}"
