@@ -273,7 +273,11 @@ function MagicParser(data) {
 const refreshTurn = async (turn, browser) => {
   Logger.info(`Current turn update started: ${turn.designation}`);
 
-  const postid = turn.url.split('#')[1];
+  let postid = turn.url.split('#')[1];
+
+  if (postid.length > 6) {
+    postid = postid.substring(0, 6);
+  }
 
   const page = await browser.newPage();
 
